@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Follows the output of the build watcher. Press Ctrl+C to stop following.
+exec tail -n 200 -F "$HOME/build.log"

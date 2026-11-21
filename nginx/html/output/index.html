@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Output</title>
+  <style>
+    /* Always dark, to match the editor this page sits inside. */
+    :root {
+      color-scheme: dark;
+      --bg: #1b1b1f; --bar: #25252b; --line: #3a3a44; --text: #ececf1; --muted: #a0a0ad;
+      --accent: #bb86fc; --bad: #ff7b72; --code: #131316;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body { display: flex; flex-direction: column; background: var(--bg); color: var(--text); font: 13px/1.4 system-ui, sans-serif; }
+    header { display: flex; align-items: center; gap: 10px; padding: 5px 12px; background: var(--bar); border-bottom: 1px solid var(--line); }
+    header p { margin: 0; flex: 1; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    button { font: inherit; color: var(--text); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+    button:hover { border-color: var(--accent); }
+    #lines { flex: 1 1 auto; overflow: auto; padding: 2px 12px 12px; }
+    .entry { border: 1px solid var(--line); border-radius: 6px; margin-top: 8px; background: var(--bg); }
+    .entry summary { cursor: pointer; padding: 5px 8px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
+    .entry summary .name { flex: 1; }
+    .entry summary .time { color: var(--muted); font-weight: 400; }
+    .entry.err summary .name { color: var(--bad); }
+    .entry pre { margin: 0; padding: 8px 10px; background: var(--code); border-top: 1px solid var(--line); overflow: auto; font: 12.5px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-word; }
+    .empty { color: var(--muted); padding: 12px 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <p id="summary">What the app prints, such as its requests to the FHIR server</p>
+    <button id="clear" type="button">Clear</button>
+  </header>
+  <div id="lines"></div>
+<script>
+  // Shows what the app printed. The App tab saves each printed line in the
+  // browser's storage for this lab address, and this page reads it from
+  // there. Both pages come from the same address, so they share that storage
+  // without any server in between.
+  const STORE = 'codelab-output';
+  const lines = document.getElementById('lines');
+  const summary = document.getElementById('summary');
+  let shown = null;
+
+  function read() {
+    try { return JSON.parse(localStorage.getItem(STORE) || '[]'); } catch (e) { return []; }
+  }
+
+  // Splits a printed line that carries JSON into a name and formatted JSON. Anything else is shown as it was printed.
+  function parts(text) {
+    const brace = text.indexOf('{');
+    if (brace > 0 && brace < 60) {
+      try {
+        return { name: text.slice(0, brace).replace(/[:\s]+$/, ''), body: JSON.stringify(JSON.parse(text.slice(brace)), null, 2) };
+      } catch (e) {}
+    }
+    return { name: text.length > 80 ? text.slice(0, 80) + ' ...' : text, body: text };
+  }
+
+  function render() {
+    const raw = localStorage.getItem(STORE) || '[]';
+    if (raw === shown) return;
+    const grew = shown !== null && raw.length > shown.length;
+    shown = raw;
+    const entries = read();
+    lines.replaceChildren();
+    if (entries.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Nothing printed yet. Tap Sync on the App tab. From step 4 on, each request the app sends to the FHIR server appears here, and so does the reason when a sync fails.';
+      lines.append(empty);
+      summary.textContent = 'What the app prints, such as its requests to the FHIR server';
+      return;
+    }
+    summary.textContent = entries.length + (entries.length === 1 ? ' entry' : ' entries') + ', newest first';
+    entries.slice().reverse().forEach((entry, index) => {
+      const { name, body } = parts(entry.text);
+      const box = document.createElement('details');
+      box.className = 'entry' + (entry.kind === 'error' ? ' err' : '');
+      // The two newest entries start open.
+      box.open = index < 2;
+      const head = document.createElement('summary');
+      const label = document.createElement('span');
+      label.className = 'name';
+      label.textContent = name;
+      const time = document.createElement('span');
+      time.className = 'time';
+      time.textContent = new Date(entry.at).toLocaleTimeString();
+      const copy = document.createElement('button');
+      copy.type = 'button';
+      copy.textContent = 'Copy';
+      copy.addEventListener('click', (event) => {
+        event.preventDefault();
+        navigator.clipboard.writeText(body).then(() => { copy.textContent = 'Copied'; setTimeout(() => { copy.textContent = 'Copy'; }, 1200); }).catch(() => {});
+      });
+      head.append(label, time, copy);
+      const pre = document.createElement('pre');
+      pre.textContent = body;
+      box.append(head, pre);
+      lines.append(box);
+    });
+    lines.scrollTop = 0;
+    // Tells the editor to bring this tab to the front when something new
+    // was printed.
+    if (grew && window.parent !== window) window.parent.postMessage({ type: 'codelab-output' }, '*');
+  }
+
+  document.getElementById('clear').addEventListener('click', () => {
+    try { localStorage.setItem(STORE, '[]'); } catch (e) {}
+    render();
+  });
+  window.addEventListener('storage', (event) => { if (event.key === STORE || event.key === null) render(); });
+  render();
+  // A slow check as well, in case the browser does not deliver the event.
+  setInterval(render, 1500);
+</script>
+</body>
+</html>

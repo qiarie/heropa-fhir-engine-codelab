@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+#
+# Jumps the codelab to the end of a step, for anyone who falls behind.
+#
+#   step 4 | 5 | 6 | 7    put the five codelab files in the state they have at
+#                         the end of that step
+#   step reset            go back to the starter code
+#
+# The files it replaces are copied to ~/backups first.
+
+set -euo pipefail
+
+SOLUTIONS=/opt/codelab/solutions
+SRC_DIR="$CODELAB_DIR/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+
+usage() {
+    echo "Use one of these."
+    echo "  step 4        step 5        step 6        step 7        step reset"
+    exit 1
+}
+
+backup() {
+    local dir="$HOME/backups/$(date '+%Y%m%d-%H%M%S')"
+    mkdir -p "$dir"
+    for f in "${FILES[@]}"; do
+        [[ -f "$SRC_DIR/$f" ]] && cp "$SRC_DIR/$f" "$dir/"
+    done
+    echo "Your previous files are saved in $dir"
+}
+
+case "${1:-}" in
+    4|5|6|7)
+        backup
+        for f in "${FILES[@]}"; do
+            cp "$SOLUTIONS/step-$1/$f" "$SRC_DIR/$f"
+        done
+        echo "The code is now at the end of step $1. The app is rebuilding."
+        ;;
+    reset)
+        backup
+        for f in "${FILES[@]}"; do
+            git -C "$CODELAB_DIR" checkout -q -- "shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/$f"
+        done
+        echo "The code is back to the starter. The app is rebuilding."
+        echo "The app keeps its patients in your browser. To empty that as well,"
+        echo "click  Clear app data  at the top of the App tab."
+        ;;
+    *)
+        usage
+        ;;
+esac

@@ -1,0 +1,25 @@
+# The front of a codelab lab VM. The nginx image fills in LAB_URL when the
+# container starts.
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ""      close;
+}
+
+# Plain HTTP only sends the browser to HTTPS. The editor needs a secure page
+# for the clipboard and for its web views.
+server {
+    listen 80;
+    server_name _;
+    return 301 ${LAB_URL}$request_uri;
+}
+
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate     /etc/nginx/certs/lab.crt;
+    ssl_certificate_key /etc/nginx/certs/lab.key;
+
+    include /etc/nginx/lab-routes.conf;
+}

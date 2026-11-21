@@ -1,0 +1,106 @@
+#!/usr/bin/env bash
+#
+# Rebuilds the web app whenever a source or Gradle file is saved.
+#
+# Gradle's own continuous mode is not used because it does not pick up edits to
+# build.gradle.kts. Each build here is an ordinary Gradle run that reuses the
+# warm daemon.
+
+set -uo pipefail
+
+cd "$CODELAB_DIR"
+
+TASK=":shared:wasmJsBrowserDevelopmentExecutableDistribution"
+SRC_DIR="shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+DIRTY="$(mktemp -u /tmp/codelab-dirty.XXXXXX)"
+EVENTS="close_write,create,delete,move"
+OUTPUT="$(mktemp /tmp/codelab-build.XXXXXX)"
+
+# Two watches feed one flag file. Changes that land while a build is running
+# set the flag again, so they are built next and never lost.
+#
+# Gradle writes into build folders while it runs. inotifywait still reports
+# folders created there despite the exclude, so the reader drops them as well.
+# Otherwise every build would start a second one.
+inotifywait -m -q -r -e "$EVENTS" --exclude '(/build/|/\.gradle/|/\.kotlin/|\.swp$|\.swx$|~$)' \
+    shared ../gradle 2>/dev/null | while read -r dir _; do
+        case "$dir" in
+            */build/*|*/.gradle/*|*/.kotlin/*) continue ;;
+        esac
+        touch "$DIRTY"
+    done &
+inotifywait -m -q -e "$EVENTS" --include '\.(kts|properties)$' . 2>/dev/null \
+    | while read -r _; do touch "$DIRTY"; done &
+trap 'kill $(jobs -p) 2>/dev/null' EXIT
+
+# Records what the watcher is doing in a small file that nginx serves. The
+# file is replaced in one move so a reader never sees half of it.
+STATUS_DIR="$HOME/.codelab"
+mkdir -p "$STATUS_DIR"
+BUILD=0
+status() {
+    printf '{"state":"%s","build":"%s-%s","epoch":%s}\n' "$1" "$$" "$BUILD" "$(date '+%s')" \
+        > "$STATUS_DIR/status.json.tmp"
+    mv -f "$STATUS_DIR/status.json.tmp" "$STATUS_DIR/status.json"
+}
+
+rule() { printf '%s\n' "------------------------------------------------------------"; }
+
+# Lists the codelab steps that are not done yet. Some unfinished code builds
+# without error and only fails when the app runs, for example a TODO() left
+# in AppFhirSyncTask, which stops the sync. The build cannot report those, so
+# this does after each good build.
+still_to_do() {
+    local name file found=0 line
+    for name in "${FILES[@]}"; do
+        file="$SRC_DIR/$name"
+        [[ -f "$file" ]] || continue
+        while IFS= read -r line; do
+            if (( ! found )); then
+                printf '\033[1;33mStill to do\033[0m\n'
+                found=1
+            fi
+            printf ' %-28s %s\n' "$name" "$line"
+        done < <(grep -oE '// [0-9.]+ Replace .*|TODO\(\)' "$file" | sed -E 's|^// ||' | awk '!seen[$0]++' \
+                    | sed -E 's|^TODO\(\)$|a function still says TODO(), which is step 5.2|')
+    done
+    if (( found )); then
+        printf 'The app runs, but the steps above are not in it yet.\n'
+    else
+        printf 'Every step of the codelab is in the code.\n'
+    fi
+}
+
+touch "$DIRTY"
+while true; do
+    if [[ ! -e "$DIRTY" ]]; then
+        sleep 1
+        continue
+    fi
+    # A short pause lets an editor finish writing before the build starts.
+    sleep 1
+    rm -f "$DIRTY"
+
+    BUILD=$((BUILD + 1))
+    status building
+    rule
+    printf '%s  Building the app. This can take a minute.\n' "$(date '+%H:%M:%S')"
+    rule
+    # The filter drops lines that say nothing to a learner, such as tasks that
+    # had nothing to do and a Gradle notice about how the project is set up.
+    ./gradlew --console=plain "$TASK" 2>&1 | tee "$OUTPUT" \
+        | grep --line-buffered -vE '^> Task .* (UP-TO-DATE|NO-SOURCE|SKIPPED|FROM-CACHE)$|^$|^\* Try:|^> Run with |^> Get more help |was resolved during configuration time|^This is a build performance and scalability issue|gradle/gradle/issues/2298|^Run with --info for a stacktrace'
+    status="${PIPESTATUS[0]}"
+    rule
+    if [[ "$status" -eq 0 ]]; then
+        status ok
+        printf '%s  \033[1;32mBUILD OK\033[0m  The App tab reloads by itself.\n' "$(date '+%H:%M:%S')"
+        still_to_do
+    else
+        printf '%s  \033[1;31mBUILD FAILED\033[0m  The lines starting with e above name the file, the line and the problem.\n' "$(date '+%H:%M:%S')"
+        status failed
+        codelab-hints "$OUTPUT" || true
+    fi
+    rule
+done

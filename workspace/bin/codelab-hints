@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# Reads the output of a failed build and prints plain advice for the errors
+# this codelab most often produces. Android Studio would catch most of them
+# while typing. The editor in this lab does not, so the build log explains
+# them instead.
+#
+# It takes the file holding the build output as its only argument.
+
+set -uo pipefail
+
+LOG="${1:?give the build output file}"
+SRC_DIR="${CODELAB_DIR:-.}/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
+errors="$(grep -E '^e: ' "$LOG" || true)"
+[[ -n "$errors" ]] || exit 0
+
+hints=()
+hint() { hints+=("$1"); }
+has() { grep -qE "$1" <<<"$errors"; }
+
+# Prints the import a codelab name needs, or nothing for any other name.
+import_for() {
+    case "$1" in
+        DatabaseErrorStrategy)       echo "import dev.ohs.fhir.engine.DatabaseErrorStrategy" ;;
+        FhirEngineConfiguration)     echo "import dev.ohs.fhir.engine.FhirEngineConfiguration" ;;
+        FhirEngineProvider)          echo "import dev.ohs.fhir.engine.FhirEngineProvider" ;;
+        ServerConfiguration)         echo "import dev.ohs.fhir.engine.ServerConfiguration" ;;
+        HttpLogger)                  echo "import dev.ohs.fhir.engine.sync.remote.HttpLogger" ;;
+        Bundle)                      echo "import dev.ohs.fhir.model.r4.Bundle" ;;
+        AcceptLocalConflictResolver) echo "import dev.ohs.fhir.engine.sync.AcceptLocalConflictResolver" ;;
+        HttpCreateMethod)            echo "import dev.ohs.fhir.engine.sync.upload.HttpCreateMethod" ;;
+        HttpUpdateMethod)            echo "import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod" ;;
+        StringFilterModifier)        echo "import dev.ohs.fhir.engine.search.StringFilterModifier" ;;
+        FhirString)                  echo "import dev.ohs.fhir.model.r4.String as FhirString" ;;
+    esac
+}
+
+# The FHIR type String imported without a new name. Kotlin then reads every
+# String in the file as the FHIR one, and the errors that follow do not say so.
+# The file is checked directly, because those errors take many forms.
+for file in "$SRC_DIR"/*.kt; do
+    [[ -f "$file" ]] || continue
+    if grep -qxF 'import dev.ohs.fhir.model.r4.String' "$file"; then
+        hint "$(basename "$file") imports the FHIR type String without a new name, so it hides Kotlin's own String. Change the line
+     import dev.ohs.fhir.model.r4.String
+   to
+     import dev.ohs.fhir.model.r4.String as FhirString"
+    fi
+done
+
+# One hint for each missing import, naming the file the error is in.
+while read -r file name; do
+    [[ -n "$name" ]] || continue
+    line="$(import_for "$name")"
+    if [[ -n "$line" ]]; then
+        hint "'$name' has no import in $file. Add this line under the numbered import comment near the top of that file
+     $line"
+    fi
+done < <(grep -E "Unresolved reference '[A-Za-z]+'" <<<"$errors" \
+            | sed -E "s|.*/([A-Za-z]+\.kt):[0-9]+:[0-9]+ Unresolved reference '([A-Za-z]+)'.*|\1 \2|" | sort -u)
+
+if has "Unresolved reference 'searchByCity'"; then
+    hint "Step 6.1 is missing. It adds the function searchByCity, which step 6.3 calls."
+fi
+if has "Unresolved reference 'withCity'"; then
+    hint "Step 6.2 is missing. It adds the function withCity, which step 6.3 calls."
+fi
+if has "Unresolved reference '(showPatients|scope|syncLauncher|_pollState|fhirEngine|urls|loadJob|_patients|refreshPatients|triggerOneTimeSync)'"; then
+    hint "Part of the starter code was deleted by accident. Run  step 4  with the number of the last step you finished to get clean files, then redo the step you are on."
+fi
+if has "is not abstract and does not implement abstract"; then
+    hint "A class is incomplete. A missing import in that file can cause this, so click  Fix imports  first. If the error stays, a function was deleted. In step 5.1 keep all three functions of DownloadWorkManagerImpl. In step 5.2 replace the four functions of AppFhirSyncTask with the four from the codelab."
+fi
+if has "Conflicting overloads|Redeclaration|Conflicting declarations"; then
+    hint "Something is in the file twice. A step says to replace a comment or a function, not to add the new code next to the old one. Delete the older copy."
+fi
+if has "Conflicting import|ambiguity"; then
+    hint "Two imports bring in the same name. Delete the one that is there twice."
+fi
+if has "'when' expression must be exhaustive"; then
+    hint "The line  else -> {}  is missing at the end of the when block in step 5.4."
+fi
+if has "Missing return statement|A 'return' expression required"; then
+    hint "A return line was deleted. In step 5.1 each function keeps a return as its last line. Compare the function with the step."
+fi
+if has "Expecting|Syntax error|Unexpected tokens|Missing '}'|Unclosed"; then
+    hint "A bracket, brace or quote is missing or extra near the line number in the first error. Compare that part with the step."
+fi
+
+echo
+if [[ "${#hints[@]}" -gt 0 ]]; then
+    printf '\033[1;33mWhat to do\033[0m\n'
+    i=1
+    for h in "${hints[@]}"; do
+        printf ' %d. %s\n' "$i" "$h"
+        i=$((i + 1))
+    done
+    echo
+fi
+printf 'To add missing imports for you, click  \033[1mFix imports\033[0m  in the bar at the bottom of the Editor.\n'
+printf 'To jump to a working version of a step, run  \033[1mstep 4\033[0m  with the number of the step.\n'

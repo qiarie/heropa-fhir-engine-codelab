@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+#
+# Adds the imports the codelab code needs, the way Android Studio would.
+#
+# The editor in this lab does not offer imports. This looks at which codelab
+# names each of the five codelab files uses and adds the import line for each
+# one that is missing. It also removes the one import that is always wrong
+# here, which is the FHIR type String without a new name. That type shares
+# its name with Kotlin's own String, and Kotlin then picks the wrong one.
+#
+# Each file is copied to ~/backups before it is changed.
+
+set -euo pipefail
+
+SRC_DIR="$CODELAB_DIR/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
+WRONG='import dev.ohs.fhir.model.r4.String'
+
+# Each entry is the file, then a bar, then a pattern that shows a name is in
+# use, then a bar, then the import line that name needs.
+RULES=(
+    'FhirEngineSetup.kt|(^|[^A-Za-z])DatabaseErrorStrategy\.|import dev.ohs.fhir.engine.DatabaseErrorStrategy'
+    'FhirEngineSetup.kt|(^|[^A-Za-z])FhirEngineConfiguration\(|import dev.ohs.fhir.engine.FhirEngineConfiguration'
+    'FhirEngineSetup.kt|(^|[^A-Za-z])FhirEngineProvider\.|import dev.ohs.fhir.engine.FhirEngineProvider'
+    'FhirEngineSetup.kt|(^|[^A-Za-z])ServerConfiguration\(|import dev.ohs.fhir.engine.ServerConfiguration'
+    'FhirEngineSetup.kt|(^|[^A-Za-z])HttpLogger[.(]|import dev.ohs.fhir.engine.sync.remote.HttpLogger'
+    'DownloadWorkManagerImpl.kt|(^|[^A-Za-z])Bundle([^A-Za-z]|$)|import dev.ohs.fhir.model.r4.Bundle'
+    'AppFhirSyncTask.kt|(^|[^A-Za-z])FhirEngineProvider\.|import dev.ohs.fhir.engine.FhirEngineProvider'
+    'AppFhirSyncTask.kt|(^|[^A-Za-z])AcceptLocalConflictResolver([^A-Za-z]|$)|import dev.ohs.fhir.engine.sync.AcceptLocalConflictResolver'
+    'AppFhirSyncTask.kt|(^|[^A-Za-z])HttpCreateMethod\.|import dev.ohs.fhir.engine.sync.upload.HttpCreateMethod'
+    'AppFhirSyncTask.kt|(^|[^A-Za-z])HttpUpdateMethod\.|import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod'
+    'PatientListViewModel.kt|(^|[^A-Za-z])StringFilterModifier\.|import dev.ohs.fhir.engine.search.StringFilterModifier'
+    'PatientListViewModel.kt|(^|[^A-Za-z])FhirString\(|import dev.ohs.fhir.model.r4.String as FhirString'
+)
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+
+backup=""
+changed=0
+
+for name in "${FILES[@]}"; do
+    file="$SRC_DIR/$name"
+    [[ -f "$file" ]] || { echo "Cannot find $file" >&2; exit 1; }
+
+    body="$(grep -vE '^[[:space:]]*(import |//)' "$file" || true)"
+    add=()
+    for rule in "${RULES[@]}"; do
+        [[ "${rule%%|*}" == "$name" ]] || continue
+        rest="${rule#*|}"
+        pattern="${rest%|*}"
+        line="${rest##*|}"
+        if grep -qE "$pattern" <<<"$body" && ! grep -qxF "$line" "$file"; then
+            add+=("$line")
+        fi
+    done
+
+    remove_wrong=0
+    grep -qxF "$WRONG" "$file" && remove_wrong=1
+
+    [[ "${#add[@]}" -gt 0 || "$remove_wrong" -eq 1 ]] || continue
+
+    if [[ -z "$backup" ]]; then
+        backup="$HOME/backups/$(date '+%Y%m%d-%H%M%S')"
+        mkdir -p "$backup"
+    fi
+    cp "$file" "$backup/"
+
+    # The imports go on the lines under the numbered import comment, which the
+    # lab puts under the import group of the starter code. In a file where
+    # that comment is missing they go after the last import line, or after the
+    # package line when the file has no imports yet.
+    lines=""
+    for line in ${add[@]+"${add[@]}"}; do lines+="$line"$'\n'; done
+    anchor="$(grep -nE '^// [0-9.]+ Imports? ' "$file" | head -n 1 | cut -d: -f1 || true)"
+    [[ -n "$anchor" ]] || anchor="$(grep -nE '^import ' "$file" | tail -n 1 | cut -d: -f1 || true)"
+    [[ -n "$anchor" ]] || anchor="$(grep -nE '^package ' "$file" | head -n 1 | cut -d: -f1 || true)"
+    tmp="$(mktemp)"
+    LINES="$lines" ANCHOR="${anchor:-1}" WRONG="$WRONG" REMOVE="$remove_wrong" awk '
+        !(ENVIRON["REMOVE"] == "1" && $0 == ENVIRON["WRONG"]) { print }
+        NR == ENVIRON["ANCHOR"] + 0 { printf "%s", ENVIRON["LINES"] }
+    ' "$file" > "$tmp"
+    cat "$tmp" > "$file"
+    rm -f "$tmp"
+    changed=1
+
+    echo "$name"
+    if (( remove_wrong )); then
+        echo "  Removed  $WRONG"
+        echo "           It is the FHIR type, which has the same name as Kotlin's String."
+    fi
+    for line in ${add[@]+"${add[@]}"}; do
+        echo "  Added    $line"
+    done
+done
+
+if (( ! changed )); then
+    echo "The imports already match the code. Nothing was changed."
+    exit 0
+fi
+echo "Your previous files are saved in $backup"
+echo "The app is rebuilding."

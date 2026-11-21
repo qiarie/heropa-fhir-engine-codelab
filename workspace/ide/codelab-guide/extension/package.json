@@ -1,0 +1,45 @@
+{
+  "name": "codelab-guide",
+  "displayName": "Codelab guide",
+  "description": "Lays out the code, the build log, the app output and the course manual when the editor opens.",
+  "version": "1.6.0",
+  "publisher": "ohs",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "main": "./extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onWebviewPanel:codelab.build",
+    "onWebviewPanel:codelab.app",
+    "onWebviewPanel:codelab.output"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "codelab.openApp",
+        "title": "Codelab: Open the app in a browser tab"
+      },
+      {
+        "command": "codelab.showGuide",
+        "title": "Codelab: Show the guide"
+      },
+      {
+        "command": "codelab.showBuild",
+        "title": "Codelab: Show the build log"
+      },
+      {
+        "command": "codelab.showAll",
+        "title": "Codelab: Show every pane"
+      },
+      {
+        "command": "codelab.fixImports",
+        "title": "Codelab: Fix imports"
+      },
+      {
+        "command": "codelab.showOutput",
+        "title": "Codelab: Show the output"
+      }
+    ]
+  }
+}

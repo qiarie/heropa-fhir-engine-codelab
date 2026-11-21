@@ -1,0 +1,108 @@
+# The codelab lab. The workspace holds the code, the build and the editor.
+# hapi is the FHIR server the app syncs with. nginx is the only thing
+# published, and it gives each part a path.
+#
+#   /       a start page with links to the ones below
+#   /ide/   the editor
+#   /app/   the web app the learner is building
+#   /fhir/  the FHIR server
+#
+# Start it with ./lab-init.sh, which writes .env and the certificate first.
+
+name: engine-codelab
+
+services:
+  workspace:
+    build:
+      context: ./workspace
+    image: engine-codelab-workspace:local
+    container_name: engine-workspace
+    init: true
+    restart: unless-stopped
+    environment:
+      PASSWORD: ${IDE_PASSWORD:?Run ./lab-init.sh, which creates the password}
+      # The address the learner's browser uses, which the editor needs to
+      # load the build log and output pages and to open the app.
+      LAB_URL: ${LAB_URL:?Run ./lab-init.sh, which works out the lab address}
+    volumes:
+      # Docker fills this volume from the image the first time it is used, so
+      # the checkout and the warm Gradle cache arrive with it. Learner edits
+      # then survive a restart of the container.
+      - home:/home/learner
+      # The learner manual, which the editor shows beside the code. It is
+      # mounted so an edit needs a restart of this container and no rebuild.
+      - ./course-manual.md:/opt/codelab/guide/course-manual.md:ro
+      # The test patients, which the reset-server helper loads again.
+      - ./hapi/patients.json:/opt/codelab/patients.json:ro
+
+  # The FHIR server, with the database built into the image. It is reached
+  # only through nginx, at /fhir/ on the lab address.
+  hapi:
+    image: hapiproject/hapi:v8.12.0-2
+    container_name: engine-hapi
+    restart: unless-stopped
+    environment:
+      # Links inside a returned Bundle then carry the lab address the request
+      # came in on, which nginx passes along in the forwarded headers. The
+      # engine follows those links when a download has more than one page.
+      hapi.fhir.use_apache_address_strategy: "true"
+      hapi.fhir.use_apache_address_strategy_https: ${LAB_FHIR_HTTPS:-true}
+      JAVA_TOOL_OPTIONS: -Xmx1g
+
+  # Loads the test patients whenever the server is up and does not have them.
+  # It keeps checking, because the server may come back empty after the VM
+  # was stopped, and nothing else would load them again.
+  seed:
+    image: curlimages/curl:8.11.1
+    container_name: engine-seed
+    restart: unless-stopped
+    depends_on:
+      - hapi
+    volumes:
+      - ./hapi/patients.json:/data/patients.json:ro
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          if curl -sf -o /dev/null http://hapi:8080/fhir/metadata; then
+            if ! curl -sf -o /dev/null http://hapi:8080/fhir/Patient/codelab-aaron-brekke; then
+              curl -sf -o /dev/null -X POST -H "Content-Type: application/fhir+json" \
+                --data-binary @/data/patients.json http://hapi:8080/fhir/ \
+                && echo "Loaded the test patients"
+            fi
+            sleep 20
+          else
+            sleep 3
+          fi
+        done
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: engine-nginx
+    restart: unless-stopped
+    depends_on:
+      - workspace
+    environment:
+      LAB_URL: ${LAB_URL:?Run ./lab-init.sh, which works out the lab address}
+    ports:
+      - "${LAB_HTTP_PORT:-80}:80"
+      - "${LAB_HTTPS_PORT:-443}:443"
+    volumes:
+      # lab-init.sh picks the HTTPS front, or the plain HTTP one for a local
+      # test with LAB_CERT=none.
+      - ./nginx/${LAB_NGINX_CONF:-lab-https}.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./nginx/lab-routes.conf:/etc/nginx/lab-routes.conf:ro
+      - ./nginx/html:/srv/www:ro
+      - ./certs:/etc/nginx/certs:ro
+      # Read only, and never used to fill the volume. nginx serves the build
+      # output straight from the learner's checkout.
+      - type: volume
+        source: home
+        target: /srv/home
+        read_only: true
+        volume:
+          nocopy: true
+
+volumes:
+  home:

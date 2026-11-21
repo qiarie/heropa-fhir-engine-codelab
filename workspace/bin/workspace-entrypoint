@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# Starts the two things a learner needs. The first is the build watcher, which
+# rebuilds the web app after every save. The second is code-server, the editor
+# in the browser.
+
+set -euo pipefail
+
+[[ -n "${PASSWORD:-}" ]] || { echo "PASSWORD is not set. Start the lab with lab-init.sh." >&2; exit 1; }
+
+# A volume filled by an older image may lack the guide extension or hold an
+# older version of it. Installing again replaces it and takes a second.
+code-server --install-extension /opt/codelab/codelab-guide.vsix --force >/dev/null 2>&1 || true
+
+LOG="$HOME/build.log"
+: > "$LOG"
+
+# The watcher is restarted if it ever stops, so a learner never has to.
+(
+    while true; do
+        codelab-watch >> "$LOG" 2>&1 || true
+        echo "The build watcher stopped and is starting again." >> "$LOG"
+        sleep 2
+    done
+) &
+
+exec code-server \
+    --bind-addr 0.0.0.0:8080 \
+    --auth password \
+    --disable-telemetry \
+    --disable-update-check \
+    --disable-workspace-trust \
+    --app-name "FHIR Engine codelab" \
+    "$CODELAB_DIR"

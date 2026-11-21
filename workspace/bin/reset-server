@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+#
+# Puts the three test patients on the FHIR server back to their first state.
+#
+# The published codelab does this by stopping and starting the server with
+# Docker Compose. In this lab the server is already running next to the
+# workspace, so loading the test patients again is enough. They have fixed
+# ids, so each one replaces the copy the server holds.
+#
+# The app keeps its own copy of the patients in the browser. This does not
+# touch it.
+
+set -euo pipefail
+
+FHIR="http://hapi:8080/fhir"
+DATA=/opt/codelab/patients.json
+
+[[ -f "$DATA" ]] || { echo "Cannot find $DATA" >&2; exit 1; }
+
+if ! curl -sf -m 10 -o /dev/null "$FHIR/metadata"; then
+    echo "The FHIR server is not answering. It takes a minute or two to start, so try again shortly." >&2
+    exit 1
+fi
+
+if curl -sf -m 60 -o /dev/null -X POST -H 'Content-Type: application/fhir+json' \
+        --data-binary "@$DATA" "$FHIR/"; then
+    echo "The three test patients are back to their first state on the FHIR server."
+    echo "The app still holds its own copy. To start it afresh as well, click"
+    echo "Clear app data  at the top of the App tab, then tap  Sync  in the app."
+else
+    echo "The FHIR server refused the test patients. Try again in a minute." >&2
+    exit 1
+fi
