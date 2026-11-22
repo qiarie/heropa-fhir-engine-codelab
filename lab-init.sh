@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
 # lab-init.sh starts the codelab lab on this VM and prints where to open it.
-# A learner runs it once after the lab launches. Running it again is safe and
-# prints the same addresses and password.
+# A learner runs it after the lab launches, and again whenever the addresses
+# are lost or stop working. Each run reads the VM's public IP again. With a
+# permanent IP nothing has changed and it only prints the summary again. When
+# the IP changed it gets a certificate for the new address. Either way its
+# closing summary says what changed since the last run and what to do. The
+# password and the learner's code are kept.
 #
 #   ./lab-init.sh            start the lab
-#   ./lab-init.sh --reset    throw away the learner's code and the FHIR server data and start from
-#                            the starter
+#   ./lab-init.sh --reset    throw away the learner's code and the FHIR server
+#                            data and start again from the starter
 #   ./lab-init.sh --clean    stop everything and remove .env, the password and
 #                            the certificate, ready for saving as a template
 #
@@ -15,32 +19,51 @@
 #   1. Works out the lab address. It reads the VM's public IP from the AWS
 #      instance metadata service and uses https://<a-b-c-d>.sslip.io, a name
 #      that sslip.io's public DNS answers with that IP.
-#   2. Creates .env with that address and a password for the editor.
-#   3. Gets a Let's Encrypt certificate for that name through the certbot
-#      image, for nginx to serve on 443.
+#   2. Gets a certificate for nginx to serve on 443, through the certbot
+#      image. It makes up to three tries and stops at the first that works.
+#        a. A Let's Encrypt certificate for the sslip.io name.
+#        b. A Let's Encrypt certificate for the bare IP. The lab address is
+#           then https://<a.b.c.d>. Let's Encrypt counts these per IP, apart
+#           from the limit every sslip.io name shares.
+#        c. A self-signed certificate. The lab then runs in reduced mode,
+#           where browser pages stand in for the editor panes that browsers
+#           block on an untrusted certificate.
+#      A certificate that still fits the address is kept, and no request is
+#      made. When Let's Encrypt refuses a request for being over a limit, the
+#      time it gives is saved in certs/retry-after and no request goes out
+#      before then. A later run puts the lab back in full mode automatically.
+#   3. Creates .env with the address, the mode and a password for the editor.
 #   4. Starts the workspace, the FHIR server and nginx with docker compose.
 #   5. Waits for the editor and the FHIR server to answer.
 #
-# Settings come from the environment, then .env, then .env.example.
+# Settings come from the environment, then .env, then .env.example. The
+# comments in .env.example describe every one of them and its options.
 #
-#   PUBLIC_IP      skips the metadata lookup, for testing off Heropa
-#   LAB_HOST       skips the sslip.io name as well, for example localhost
-#   LAB_CERT       letsencrypt, self-signed or none. none serves plain HTTP
-#                  and is only allowed with LAB_HOST=localhost, where the
-#                  browser needs no certificate to treat the page as secure.
-#   CERTBOT_EMAIL  Let's Encrypt account address, optional
+#   PUBLIC_IP        skips the metadata lookup, for testing off Heropa
+#   LAB_HOST         skips the sslip.io name as well, for example localhost
+#   LAB_CERT         letsencrypt, self-signed or none. none serves plain HTTP
+#                    and is only allowed with LAB_HOST=localhost, where the
+#                    browser needs no certificate to treat the page as secure.
+#                    self-signed goes straight to reduced mode.
+#   LAB_ACME_SERVER  the directory URL of another ACME server, for example
+#                    the Let's Encrypt staging one, for testing
+#   IDE_AUTH         password or none. none makes the editor ask for no
+#                    password, which opens its terminal to anyone who reaches
+#                    the lab address. The default is password.
+#   CERTBOT_EMAIL    Let's Encrypt account address, optional
 #   LAB_HTTP_PORT and LAB_HTTPS_PORT, the ports nginx publishes
 #
-# For a Let's Encrypt certificate the Heropa VM needs a permanent public IP
-# and inbound TCP 80 and 443 from 0.0.0.0/0. Let's Encrypt checks over port 80
-# from addresses it does not publish, so that rule cannot be narrowed.
+# For a Let's Encrypt certificate the Heropa VM needs a public IP and inbound
+# TCP 80 and 443 from 0.0.0.0/0. Let's Encrypt checks over port 80 from
+# addresses it does not publish, so that rule cannot be narrowed.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 EXAMPLE_FILE="$SCRIPT_DIR/.env.example"
-CERTBOT_IMAGE="certbot/certbot:v3.0.1"
+# 5.10.0 can ask for a certificate for a bare IP, which older ones cannot.
+CERTBOT_IMAGE="certbot/certbot:v5.10.0"
 CERT_DIR="$SCRIPT_DIR/certs"
 # Kept apart from CERT_DIR so --clean leaves the Let's Encrypt account and
 # certificate alone. Let's Encrypt issues the same name only five times a
@@ -136,13 +159,18 @@ lookup_public_ip() {
     curl -fsS -m 3 "$base/meta-data/public-ipv4" 2>/dev/null
 }
 
-LAB_HOST="${LAB_HOST:-}"
-if [[ -z "$LAB_HOST" ]]; then
+# NAME_HOST is the name the lab asks a certificate for first. PUBLIC_IP stays
+# empty when LAB_HOST is given, and then no certificate for a bare IP is tried.
+NAME_HOST="$(setting LAB_HOST)"
+if [[ -z "$NAME_HOST" ]]; then
+    PUBLIC_IP="$(setting PUBLIC_IP)"
     PUBLIC_IP="${PUBLIC_IP:-$(lookup_public_ip || true)}"
     [[ "$PUBLIC_IP" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]] \
-        || error "Could not read a public IPv4 address. Give the VM a permanent public IP in Heropa, or set PUBLIC_IP."
+        || error "Could not read a public IPv4 address. Check that the VM has a public IP in Heropa, or set PUBLIC_IP."
     info "Public IP is $PUBLIC_IP"
-    LAB_HOST="${PUBLIC_IP//./-}.sslip.io"
+    NAME_HOST="${PUBLIC_IP//./-}.sslip.io"
+else
+    PUBLIC_IP=""
 fi
 
 HTTP_PORT="$(setting LAB_HTTP_PORT)";   HTTP_PORT="${HTTP_PORT:-80}"
@@ -151,102 +179,255 @@ LAB_CERT="$(setting LAB_CERT)"
 LAB_CERT="${LAB_CERT:-letsencrypt}"
 [[ "$LAB_CERT" == letsencrypt || "$LAB_CERT" == self-signed || "$LAB_CERT" == none ]] \
     || error "LAB_CERT must be letsencrypt, self-signed or none, not $LAB_CERT"
+IDE_AUTH="$(setting IDE_AUTH)"
+IDE_AUTH="${IDE_AUTH:-password}"
+[[ "$IDE_AUTH" == password || "$IDE_AUTH" == none ]] \
+    || error "IDE_AUTH must be password or none, not $IDE_AUTH"
+CERTBOT_EMAIL="$(setting CERTBOT_EMAIL)"
+ACME_SERVER="$(setting LAB_ACME_SERVER)"
 
 if [[ "$LAB_CERT" == none ]]; then
     # The editor's web views need a secure page. Without a certificate only
     # localhost counts as one.
-    [[ "$LAB_HOST" == localhost || "$LAB_HOST" == 127.0.0.1 ]] \
+    [[ "$NAME_HOST" == localhost || "$NAME_HOST" == 127.0.0.1 ]] \
         || error "LAB_CERT=none only works with LAB_HOST=localhost."
-    LAB_URL="http://$LAB_HOST"
-    [[ "$HTTP_PORT" == 80 ]] || LAB_URL="$LAB_URL:$HTTP_PORT"
-    LAB_PORT="$HTTP_PORT"
-    NGINX_CONF="lab-http"
-else
-    LAB_URL="https://$LAB_HOST"
-    [[ "$HTTPS_PORT" == 443 ]] || LAB_URL="$LAB_URL:$HTTPS_PORT"
-    LAB_PORT="$HTTPS_PORT"
-    NGINX_CONF="lab-https"
-fi
-CERTBOT_EMAIL="$(setting CERTBOT_EMAIL)"
-
-if [[ "$LAB_CERT" == none ]]; then
-    info "The lab will answer at $LAB_URL over plain HTTP, for a local test"
-else
-    info "The lab will answer at $LAB_URL with a $LAB_CERT certificate"
 fi
 
-# --- 3. .env ----------------------------------------------------------------
-
-# The password is made once and kept, so a second run prints the same one.
-IDE_PASSWORD="$(env_get IDE_PASSWORD)"
-if [[ -z "$IDE_PASSWORD" ]]; then
-    IDE_PASSWORD="$(openssl rand -hex 6)"
-    info "Created a password for the editor"
-fi
-
-env_set LAB_URL        "$LAB_URL"
-env_set IDE_PASSWORD   "$IDE_PASSWORD"
-env_set LAB_CERT       "$LAB_CERT"
-env_set LAB_NGINX_CONF "$NGINX_CONF"
-# Tells the FHIR server which scheme to write into the links it returns.
-if [[ "$LAB_CERT" == none ]]; then env_set LAB_FHIR_HTTPS "false"; else env_set LAB_FHIR_HTTPS "true"; fi
-env_set LAB_HTTP_PORT  "$HTTP_PORT"
-env_set LAB_HTTPS_PORT "$HTTPS_PORT"
-
-# --- 4. certificate ---------------------------------------------------------
+# --- 3. certificate ---------------------------------------------------------
 
 mkdir -p "$CERT_DIR"
 
-# True when lab.crt names LAB_HOST and stays valid for at least DAYS more.
+# A certificate this close to its end is replaced. The ones for a bare IP last
+# six days, so the margin has to be short.
+MIN_DAYS_LEFT=2
+
+# True when lab.crt is for HOST, which may be a name or an IP, and has the
+# margin above left.
 cert_fits() {
-    local days="$1"
-    openssl x509 -in "$CERT_DIR/lab.crt" -noout -checkhost "$LAB_HOST" 2>/dev/null | grep -q 'does match' \
-        && openssl x509 -in "$CERT_DIR/lab.crt" -noout -checkend $(( days * 86400 )) >/dev/null 2>&1 \
-        && [[ -s "$CERT_DIR/lab.key" ]]
+    local host="$1" check=-checkhost
+    [[ -s "$CERT_DIR/lab.crt" && -s "$CERT_DIR/lab.key" ]] || return 1
+    [[ "$host" =~ ^[0-9.]+$ ]] && check=-checkip
+    openssl x509 -in "$CERT_DIR/lab.crt" -noout "$check" "$host" 2>/dev/null | grep -q 'does match' \
+        && openssl x509 -in "$CERT_DIR/lab.crt" -noout -checkend $(( MIN_DAYS_LEFT * 86400 )) >/dev/null 2>&1
 }
 
-# True when lab.crt signed itself, which is how a leftover test certificate
+# True when lab.crt signed itself, which is how a fallback or test certificate
 # is told apart from a Let's Encrypt one.
 cert_self_signed() {
     [[ "$(openssl x509 -in "$CERT_DIR/lab.crt" -noout -subject 2>/dev/null | sed 's/^subject=//')" \
         == "$(openssl x509 -in "$CERT_DIR/lab.crt" -noout -issuer 2>/dev/null | sed 's/^issuer=//')" ]]
 }
 
-if [[ "$LAB_CERT" == letsencrypt ]]; then
-    if cert_fits 30 && ! cert_self_signed; then
-        info "The Let's Encrypt certificate for $LAB_HOST is already in place"
+make_self_signed() {
+    local san="DNS:$NAME_HOST"
+    [[ -n "$PUBLIC_IP" ]] && san="$san,IP:$PUBLIC_IP"
+    rm -f "$CERT_DIR/lab.crt" "$CERT_DIR/lab.key"
+    openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
+        -subj "/CN=$NAME_HOST" -addext "subjectAltName=$san" \
+        -keyout "$CERT_DIR/lab.key" -out "$CERT_DIR/lab.crt" 2>/dev/null
+    chmod 644 "$CERT_DIR/lab.key"   # read by nginx inside its container
+}
+
+# Let's Encrypt says when to come back after it refuses a request for being
+# over a limit. That time is kept here per name or IP, and no request for it
+# goes out before then. Delete the file to ask again at once.
+RETRY_FILE="$CERT_DIR/retry-after"
+
+# Prints the saved time for IDENT as seconds since 1970, or nothing.
+retry_time() {
+    [[ -f "$RETRY_FILE" ]] || return 0
+    awk -v id="$1" '$1 == id { t = $2 } END { if (t != "") print t }' "$RETRY_FILE"
+}
+
+retry_save() {
+    local tmp
+    tmp="$(mktemp "${TMPDIR:-/tmp}/engine-lab-retry.XXXXXX")"
+    [[ -f "$RETRY_FILE" ]] && awk -v id="$1" '$1 != id' "$RETRY_FILE" > "$tmp"
+    printf '%s %s\n' "$1" "$2" >> "$tmp"
+    cat "$tmp" > "$RETRY_FILE"
+    rm -f "$tmp"
+}
+
+# Reads certbot's output in FILE. When it holds a refusal for being over a
+# limit, prints the time to come back as seconds since 1970. An hour from now
+# is used when the refusal names no time.
+rate_limit_until() {
+    local file="$1" stamp until
+    grep -qiE 'rateLimited|too many (certificates|new orders|failed authorizations|registrations)' "$file" || return 0
+    stamp="$(grep -oiE 'retry after [0-9]{4}-[0-9]{2}-[0-9]{2}[ T][0-9]{2}:[0-9]{2}:[0-9]{2}' "$file" | head -n 1 | sed -E 's/^retry after //I; s/T/ /' || true)"
+    until=""
+    [[ -n "$stamp" ]] && until="$(date -u -d "$stamp UTC" +%s 2>/dev/null || true)"
+    [[ -n "$until" ]] || until=$(( $(date +%s) + 3600 ))
+    printf '%s' "$until"
+}
+
+show_time() { date -d "@$1" '+%H:%M on %d %b' 2>/dev/null || printf 'later'; }
+
+NGINX_STOPPED=0
+CERT_PROBLEM=""      # why the last request failed, in words for the learner
+CERT_RETRY_AT=""     # the earliest saved time to ask again, when there is one
+
+# Asks Let's Encrypt for a certificate and installs it as lab.crt and lab.key.
+# KIND is name or ip, and IDENT is the name or the IP. Returns 1 on any
+# failure, after setting CERT_PROBLEM, and never stops the script.
+request_cert() {
+    local kind="$1" ident="$2" cert_name log until now
+    local -a args
+    now="$(date +%s)"
+
+    until="$(retry_time "$ident")"
+    if [[ -n "$until" ]] && (( until > now )); then
+        info "Not asking for a certificate for $ident before $(show_time "$until"), the time Let's Encrypt gave"
+        CERT_PROBLEM="Let's Encrypt is over its limit for this address"
+        [[ -z "$CERT_RETRY_AT" ]] || (( until < CERT_RETRY_AT )) && CERT_RETRY_AT="$until"
+        return 1
+    fi
+
+    info "Requesting a Let's Encrypt certificate for $ident"
+    args=(certonly --standalone --non-interactive --agree-tos --keep-until-expiring)
+    if [[ -n "$CERTBOT_EMAIL" ]]; then
+        args+=(--email "$CERTBOT_EMAIL")
     else
-        info "Requesting a Let's Encrypt certificate for $LAB_HOST"
-        email_args=(--register-unsafely-without-email)
-        [[ -n "$CERTBOT_EMAIL" ]] && email_args=(--email "$CERTBOT_EMAIL")
+        args+=(--register-unsafely-without-email)
+    fi
+    [[ -n "$ACME_SERVER" ]] && args+=(--server "$ACME_SERVER")
+    if [[ "$kind" == ip ]]; then
+        # Let's Encrypt gives a certificate for an IP only on its short profile.
+        cert_name="ip-${ident//./-}"
+        args+=(--cert-name "$cert_name" --ip-address "$ident" --required-profile shortlived)
+    else
+        cert_name="$ident"
+        args+=(--cert-name "$cert_name" -d "$ident")
+    fi
 
-        # certbot answers the check on port 80 itself, so nginx gives the port
-        # up for the minute this takes. It starts again below.
+    # certbot answers the check on port 80 itself, so nginx gives the port up
+    # for the minute this takes. Section 4 starts it again.
+    if (( ! NGINX_STOPPED )); then
         docker stop engine-nginx >/dev/null 2>&1 || true
-        mkdir -p "$LE_DIR"
-        docker run --rm -p "$HTTP_PORT:80" -v "$LE_DIR:/etc/letsencrypt" "$CERTBOT_IMAGE" \
-            certonly --standalone --non-interactive --agree-tos --keep-until-expiring \
-            "${email_args[@]}" --cert-name "$LAB_HOST" -d "$LAB_HOST" \
-            || error "certbot failed. Check that the Heropa network rules allow inbound TCP 80 from 0.0.0.0/0 and that $LAB_HOST resolves to this VM's public IP."
+        NGINX_STOPPED=1
+    fi
+    mkdir -p "$LE_DIR"
+    log="$CERT_DIR/certbot-$kind.log"
+    if ! docker run --rm -p "$HTTP_PORT:80" -v "$LE_DIR:/etc/letsencrypt" "$CERTBOT_IMAGE" \
+            "${args[@]}" > "$log" 2>&1; then
+        until="$(rate_limit_until "$log")"
+        if [[ -n "$until" ]]; then
+            retry_save "$ident" "$until"
+            [[ -z "$CERT_RETRY_AT" ]] || (( until < CERT_RETRY_AT )) && CERT_RETRY_AT="$until"
+            CERT_PROBLEM="Let's Encrypt is over its limit for this address"
+            warn "Let's Encrypt refused $ident for being over a limit. It can be asked again after $(show_time "$until")."
+        elif grep -qiE 'requests\.exceptions|Max retries exceeded|Name or service not known' "$log"; then
+            CERT_PROBLEM="this VM could not reach Let's Encrypt"
+            warn "This VM could not reach Let's Encrypt to ask for $ident. Check its outbound internet access."
+        elif grep -qiE 'Timeout during connect|likely firewall|Fetching http' "$log"; then
+            CERT_PROBLEM="Let's Encrypt could not reach this VM on port 80"
+            warn "Let's Encrypt could not reach $ident on port 80. Check that the Heropa network rules allow inbound TCP 80 from 0.0.0.0/0."
+        else
+            CERT_PROBLEM="the request to Let's Encrypt failed"
+            warn "The certificate request for $ident failed. The details are in $log"
+        fi
+        return 1
+    fi
 
-        # certbot writes as root and keeps symlinks under live/. Copy plain
-        # files that nginx can read and this user can replace later.
-        docker run --rm -v "$LE_DIR:/etc/letsencrypt" -v "$CERT_DIR:/out" \
+    # certbot writes as root and keeps symlinks under live/. Copy plain files
+    # that nginx can read and this user can replace later.
+    if ! docker run --rm -v "$LE_DIR:/etc/letsencrypt" -v "$CERT_DIR:/out" \
             --entrypoint sh "$CERTBOT_IMAGE" -c '
                 cp -L "/etc/letsencrypt/live/$1/fullchain.pem" /out/lab.crt &&
                 cp -L "/etc/letsencrypt/live/$1/privkey.pem" /out/lab.key &&
                 chown "$2" /out/lab.crt /out/lab.key &&
-                chmod 644 /out/lab.crt /out/lab.key' sh "$LAB_HOST" "$(id -u):$(id -g)" \
-            || error "Could not copy the certificate out of $LE_DIR."
+                chmod 644 /out/lab.crt /out/lab.key' sh "$cert_name" "$(id -u):$(id -g)" >> "$log" 2>&1; then
+        CERT_PROBLEM="the new certificate could not be copied into place"
+        warn "Could not copy the certificate out of $LE_DIR. The details are in $log"
+        return 1
     fi
-elif [[ "$LAB_CERT" == self-signed ]] && ! cert_fits 1; then
-    info "Making a self-signed certificate for $LAB_HOST"
-    rm -f "$CERT_DIR/lab.crt" "$CERT_DIR/lab.key"
-    openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
-        -subj "/CN=$LAB_HOST" -addext "subjectAltName=DNS:$LAB_HOST" \
-        -keyout "$CERT_DIR/lab.key" -out "$CERT_DIR/lab.crt" 2>/dev/null
-    chmod 644 "$CERT_DIR/lab.key"   # read by nginx inside its container
+    CERT_PROBLEM=""
+}
+
+# The lab runs in one of two modes. In full mode the browser trusts the
+# certificate and every pane of the editor works. In reduced mode the
+# certificate is self-signed, which browsers refuse for the editor's web
+# views, so the guide, build log and output panes are replaced by browser
+# pages.
+LAB_MODE="full"
+LAB_HOST="$NAME_HOST"
+
+case "$LAB_CERT" in
+    none)
+        ;;
+    self-signed)
+        LAB_MODE="reduced"
+        CERT_PROBLEM="LAB_CERT is set to self-signed"
+        if ! cert_fits "$NAME_HOST" || ! cert_self_signed; then
+            info "Making a self-signed certificate for $NAME_HOST"
+            make_self_signed
+        fi
+        ;;
+    letsencrypt)
+        # Three tries, in this order. The name first, then the bare IP, which
+        # Let's Encrypt counts against a limit of its own, then a self-signed
+        # certificate so the lab still starts.
+        if cert_fits "$NAME_HOST" && ! cert_self_signed; then
+            info "The Let's Encrypt certificate for $NAME_HOST is already in place"
+        elif [[ -n "$PUBLIC_IP" ]] && cert_fits "$PUBLIC_IP" && ! cert_self_signed; then
+            info "The Let's Encrypt certificate for $PUBLIC_IP is already in place"
+            LAB_HOST="$PUBLIC_IP"
+        elif request_cert name "$NAME_HOST"; then
+            info "Got a certificate for $NAME_HOST"
+        elif [[ -n "$PUBLIC_IP" ]] && request_cert ip "$PUBLIC_IP"; then
+            info "Got a certificate for $PUBLIC_IP, so the lab uses the IP as its address"
+            LAB_HOST="$PUBLIC_IP"
+        else
+            LAB_MODE="reduced"
+            if ! cert_fits "$NAME_HOST" || ! cert_self_signed; then
+                make_self_signed
+            fi
+            warn "No trusted certificate, so the lab starts in reduced mode with a self-signed one."
+        fi
+        ;;
+esac
+
+if [[ "$LAB_CERT" == none ]]; then
+    LAB_URL="http://$LAB_HOST"
+    [[ "$HTTP_PORT" == 80 ]] || LAB_URL="$LAB_URL:$HTTP_PORT"
+    LAB_PORT="$HTTP_PORT"
+    NGINX_CONF="lab-http"
+    info "The lab will answer at $LAB_URL over plain HTTP, for a local test"
+else
+    LAB_URL="https://$LAB_HOST"
+    [[ "$HTTPS_PORT" == 443 ]] || LAB_URL="$LAB_URL:$HTTPS_PORT"
+    LAB_PORT="$HTTPS_PORT"
+    NGINX_CONF="lab-https"
+    info "The lab will answer at $LAB_URL in $LAB_MODE mode"
 fi
+
+# --- 4. .env ----------------------------------------------------------------
+
+# The password is a code of four digits, which is easy to read off the
+# terminal and type. It is made once and kept, so a second run prints the same
+# one. It never starts with 0, so nothing on the way reads it as a number and
+# drops the zero. Four digits are enough here because the editor allows only
+# a few wrong tries an hour and a lab lasts a few hours.
+IDE_PASSWORD="$(env_get IDE_PASSWORD)"
+if [[ -z "$IDE_PASSWORD" ]]; then
+    IDE_PASSWORD="$(( 1000 + $(od -An -N4 -tu4 /dev/urandom | tr -d ' ') % 9000 ))"
+    info "Created a password for the editor"
+fi
+
+# What the last run left, kept to tell the learner what changed.
+PREV_URL="$(env_get LAB_URL)"
+PREV_MODE="$(env_get LAB_MODE)"
+
+env_set LAB_URL        "$LAB_URL"
+env_set LAB_MODE       "$LAB_MODE"
+env_set IDE_PASSWORD   "$IDE_PASSWORD"
+env_set IDE_AUTH       "$IDE_AUTH"
+env_set LAB_CERT       "$LAB_CERT"
+env_set LAB_NGINX_CONF "$NGINX_CONF"
+# Tells the FHIR server which scheme to write into the links it returns.
+if [[ "$LAB_CERT" == none ]]; then env_set LAB_FHIR_HTTPS "false"; else env_set LAB_FHIR_HTTPS "true"; fi
+env_set LAB_HTTP_PORT  "$HTTP_PORT"
+env_set LAB_HTTPS_PORT "$HTTPS_PORT"
 
 # --- 5. start ---------------------------------------------------------------
 
@@ -264,11 +445,12 @@ compose up -d --remove-orphans
 compose restart nginx >/dev/null
 
 # The check goes to nginx on this VM, with the lab name pinned to loopback, so
-# it works whether or not the VM can reach its own public address.
+# it works whether or not the VM can reach its own public address. The
+# certificate is not checked here, since reduced mode has an untrusted one.
 info "Waiting for the editor to answer"
 ready=0
 for _ in $(seq 1 60); do
-    if curl -fks -m 5 -o /dev/null --resolve "$LAB_HOST:$LAB_PORT:127.0.0.1" "$LAB_URL/ide/healthz"; then
+    if curl -fks -m 5 -o /dev/null --connect-to "$LAB_HOST:$LAB_PORT:127.0.0.1:$LAB_PORT" "$LAB_URL/ide/healthz"; then
         ready=1
         break
     fi
@@ -281,7 +463,7 @@ done
 info "Waiting for the FHIR server and its test patients. This can take two minutes."
 fhir_ready=0
 for _ in $(seq 1 90); do
-    if curl -fks -m 5 -o /dev/null --resolve "$LAB_HOST:$LAB_PORT:127.0.0.1" "$LAB_URL/fhir/Patient/codelab-aaron-brekke"; then
+    if curl -fks -m 5 -o /dev/null --connect-to "$LAB_HOST:$LAB_PORT:127.0.0.1:$LAB_PORT" "$LAB_URL/fhir/Patient/codelab-aaron-brekke"; then
         fhir_ready=1
         break
     fi
@@ -289,18 +471,123 @@ for _ in $(seq 1 90); do
 done
 (( fhir_ready )) || warn "The FHIR server did not answer yet. Check with docker compose logs hapi seed"
 
+# --- 6. what to tell the learner --------------------------------------------
+
+# The closing message is what a learner acts on, above all after a restart of
+# the VM. It gives the addresses, says what changed since the last run and
+# what to do about it.
+
+if [[ "$LAB_MODE" == full ]]; then
+    headline="The lab is ready. Open these in the browser on your own computer."
+else
+    headline="The lab is ready, in REDUCED MODE. Your code, the build and the app all work."
+fi
+
+# With IDE_AUTH=none the editor asks for nothing, and the summary says so in
+# place of the password.
+if [[ "$IDE_AUTH" == none ]]; then
+    password_shown="none needed"
+    open_editor="Open the Editor address. It asks for no password."
+    password_note="Not asked for on this lab."
+else
+    password_shown="$IDE_PASSWORD"
+    open_editor="Open the Editor address and enter the password."
+    password_note="The same as before."
+fi
+
 cat <<EOF
 
-The lab is ready. Open these in the browser on your own computer.
+------------------------------------------------------------------------
+$headline
 
   Editor            $LAB_URL/ide/
-  Editor password   $IDE_PASSWORD
+  Editor password   $password_shown
   App               $LAB_URL/preview/
   FHIR server       $LAB_URL/fhir/Patient
-
-The Open app button at the bottom of the Editor also opens the App.
 EOF
+[[ "$LAB_MODE" == full ]] || printf '  Build log         %s/buildlog/\n' "$LAB_URL"
 
-if [[ "$LAB_CERT" == self-signed ]]; then
-    warn "With a self-signed certificate the guide pane and other web views in the editor fail to load, because browsers refuse them on an untrusted certificate. For a local test use LAB_CERT=none."
+if [[ -z "$PREV_URL" ]]; then
+    cat <<EOF
+
+First steps
+  1. $open_editor
+  2. Click Open app at the very bottom of the Editor. The app opens in a
+     second tab.
+EOF
+else
+    echo
+    echo "Since the last run"
+    if [[ "$PREV_URL" == "$LAB_URL" ]]; then
+        cat <<EOF
+  Address    The same as before. Tabs you still have open work again after
+             a reload.
+EOF
+    else
+        cat <<EOF
+  Address    CHANGED. It was $PREV_URL
+             Close the old Editor and App tabs. They no longer work. Open
+             the two addresses above.
+EOF
+    fi
+    echo "  Password   $password_note"
+    if (( RESET )); then
+        echo "  Your code  Replaced with the starter code, because of --reset."
+        echo "  Server     The FHIR server data went back to the test patients."
+    else
+        echo "  Your code  Kept as you left it."
+    fi
+    if [[ "$PREV_MODE" == reduced && "$LAB_MODE" == full ]]; then
+        cat <<EOF
+  Mode       Back to full mode. The Guide, Build log and Output areas are in
+             the Editor again.
+EOF
+    fi
 fi
+
+if [[ "$LAB_MODE" == full && -n "$PUBLIC_IP" && "$LAB_HOST" == "$PUBLIC_IP" ]]; then
+    cat <<EOF
+
+Note
+  These addresses use the plain IP of the VM. The certificate for the usual
+  name was refused, so the lab got one for the IP. They work the same way.
+EOF
+fi
+
+if [[ "$LAB_MODE" == reduced ]]; then
+    again="Run ./lab-init.sh again later. It asks for a trusted certificate again
+  and moves the lab to full mode when it gets one."
+    [[ -n "$CERT_RETRY_AT" ]] && again="Run ./lab-init.sh again after $(show_time "$CERT_RETRY_AT"). It asks for a trusted
+  certificate again and moves the lab to full mode when it gets one."
+    [[ "$LAB_CERT" == self-signed ]] && again="Set LAB_CERT to letsencrypt on Heropa, or to none with LAB_HOST=localhost
+  for a local test."
+    cat <<EOF
+
+Why reduced mode
+  The lab could not get a certificate that browsers trust, because
+  $CERT_PROBLEM. It uses one it made itself.
+
+What is different
+  1. Your browser shows a warning page the first time you open the Editor.
+     Click Advanced, then Proceed. You do this once.
+  2. The Editor has no Guide, Build log or Output area. Use these instead.
+       Guide       the course manual in Heropa
+       Build log   the Build log address above, in its own browser tab
+       Output      the strip along the bottom of the App tab
+     The buttons at the bottom of the Editor open these pages for you.
+
+To get full mode
+  $again
+EOF
+fi
+
+if [[ "$IDE_AUTH" == none && "$LAB_HOST" != localhost && "$LAB_HOST" != 127.0.0.1 ]]; then
+    warn "IDE_AUTH is none. Anyone who reaches $LAB_URL/ide/ gets the editor and its terminal without a password. Set IDE_AUTH to password in .env and run this again unless the inbound rules let in only a network you trust."
+fi
+
+cat <<EOF
+
+Lost these details, or the tabs stopped loading? Run ./lab-init.sh again.
+It is safe at any time and prints this summary again.
+------------------------------------------------------------------------
+EOF

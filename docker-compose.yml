@@ -21,9 +21,16 @@ services:
     restart: unless-stopped
     environment:
       PASSWORD: ${IDE_PASSWORD:?Run ./lab-init.sh, which creates the password}
+      # password or none. With none the editor asks for nothing, and the
+      # password above is kept only so the switch can be turned back.
+      IDE_AUTH: ${IDE_AUTH:-password}
       # The address the learner's browser uses, which the editor needs to
       # load the build log and output pages and to open the app.
       LAB_URL: ${LAB_URL:?Run ./lab-init.sh, which works out the lab address}
+      # full when the browser trusts the lab's certificate. reduced when the
+      # certificate is self-signed, where the editor leaves out the panes
+      # that browsers block and opens browser pages in their place.
+      LAB_MODE: ${LAB_MODE:-full}
     volumes:
       # Docker fills this volume from the image the first time it is used, so
       # the checkout and the warm Gradle cache arrive with it. Learner edits

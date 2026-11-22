@@ -15,6 +15,12 @@
 // little room for each. The App button in the status bar opens it in a
 // browser tab of its own. Other buttons there bring back a pane that was
 // closed.
+//
+// The lab can also run in reduced mode, which lab-init.sh picks when it could
+// not get a certificate that browsers trust. Browsers then refuse every web
+// view in the editor, and the rendered manual, the build log and the output
+// are all web views. In that mode the manual opens as plain text, and the
+// build log and the output open as pages in browser tabs.
 
 const vscode = require('vscode');
 const fs = require('fs');
@@ -23,6 +29,7 @@ const { execFile } = require('child_process');
 const GUIDE = process.env.CODELAB_GUIDE || '/opt/codelab/guide/course-manual.md';
 const APP_FILE = (process.env.CODELAB_DIR || '') + '/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt';
 const LAB_URL = (process.env.LAB_URL || '').replace(/\/+$/, '');
+const REDUCED = process.env.LAB_MODE === 'reduced';
 const GUIDE_EDITOR = 'vscode.markdown.preview.editor';
 const BUILD = { view: 'codelab.build', title: 'Build log', path: '/buildlog/' };
 // Shows what the app prints. The app runs in another browser tab and saves
@@ -48,7 +55,8 @@ const guideIsOpen = () =>
   anyTab(
     (input) =>
       (input instanceof vscode.TabInputCustom && input.viewType === GUIDE_EDITOR) ||
-      (input instanceof vscode.TabInputWebview && /markdown\.preview/.test(input.viewType)),
+      (input instanceof vscode.TabInputWebview && /markdown\.preview/.test(input.viewType)) ||
+      (REDUCED && input instanceof vscode.TabInputText && input.uri.fsPath === GUIDE),
   );
 const pageIsOpen = (page) =>
   anyTab((input) => input instanceof vscode.TabInputWebview && input.viewType.endsWith(page.view));
@@ -103,8 +111,8 @@ function openPage(page) {
 // the code.
 async function arrange(want) {
   const needGuide = want.guide && !guideIsOpen() && fs.existsSync(GUIDE);
-  const needBuild = want.build && !pageIsOpen(BUILD) && LAB_URL !== '';
-  const needOutput = want.output && !pageIsOpen(OUTPUT) && LAB_URL !== '';
+  const needBuild = !REDUCED && want.build && !pageIsOpen(BUILD) && LAB_URL !== '';
+  const needOutput = !REDUCED && want.output && !pageIsOpen(OUTPUT) && LAB_URL !== '';
   const needTerminal = want.terminal && !terminalIsOpen();
   if (!needGuide && !needBuild && !needOutput && !needTerminal) return;
 
@@ -125,7 +133,13 @@ async function arrange(want) {
   if (needTerminal) {
     vscode.window.createTerminal({ name: TERMINAL, location: { viewColumn: COLUMN.build, preserveFocus: true } });
   }
-  if (needGuide) {
+  if (needGuide && REDUCED) {
+    await vscode.window.showTextDocument(vscode.Uri.file(GUIDE), {
+      viewColumn: COLUMN.guide,
+      preserveFocus: true,
+      preview: false,
+    });
+  } else if (needGuide) {
     await vscode.commands.executeCommand('vscode.openWith', vscode.Uri.file(GUIDE), GUIDE_EDITOR, {
       viewColumn: COLUMN.guide,
       preserveFocus: true,
@@ -140,6 +154,16 @@ async function arrange(want) {
   await vscode.commands.executeCommand('workbench.action.focusFirstEditorGroup');
 }
 
+// In reduced mode a pane's button opens the same page in a browser tab.
+function showPage(page, want) {
+  if (!REDUCED) return arrange(want);
+  if (LAB_URL === '') {
+    vscode.window.showWarningMessage('The lab address is not known. Start the lab with lab-init.sh.');
+    return undefined;
+  }
+  return vscode.env.openExternal(vscode.Uri.parse(LAB_URL + page.path));
+}
+
 // Opens the app in a browser tab of its own. The page reloads the app after
 // each successful build and shows what the app prints.
 function openApp() {
@@ -148,6 +172,20 @@ function openApp() {
     return;
   }
   vscode.env.openExternal(vscode.Uri.parse(LAB_URL + '/preview/'));
+}
+
+// Saves every open file and starts a build. A save starts one anyway, so this
+// is for the times nothing changed, or a learner wants to be sure.
+async function buildNow() {
+  await vscode.workspace.saveAll(false);
+  execFile('/usr/local/bin/build', { env: process.env }, (error, stdout, stderr) => {
+    if (error) {
+      vscode.window.showErrorMessage('The build did not start. ' + (stderr || error.message));
+      return;
+    }
+    vscode.window.showInformationMessage(stdout.trim());
+    if (!REDUCED) arrange({ build: true });
+  });
 }
 
 // Runs the fix-imports helper and shows what it changed. It does the job of
@@ -180,17 +218,20 @@ function statusButton(context, text, tooltip, command, priority) {
 function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand('codelab.showGuide', () => arrange({ guide: true })),
-    vscode.commands.registerCommand('codelab.showBuild', () => arrange({ build: true })),
-    vscode.commands.registerCommand('codelab.showOutput', () => arrange({ output: true })),
+    vscode.commands.registerCommand('codelab.showBuild', () => showPage(BUILD, { build: true })),
+    vscode.commands.registerCommand('codelab.showOutput', () => showPage(OUTPUT, { output: true })),
     vscode.commands.registerCommand('codelab.showAll', () => arrange({ guide: true, build: true, output: true, terminal: true })),
     vscode.commands.registerCommand('codelab.openApp', openApp),
     vscode.commands.registerCommand('codelab.fixImports', fixImports),
+    vscode.commands.registerCommand('codelab.buildNow', buildNow),
     // Without these the editor would bring the two tabs back empty after a
     // reload.
     ...[BUILD, OUTPUT].map((page) =>
       vscode.window.registerWebviewPanelSerializer(page.view, {
         async deserializeWebviewPanel(panel) {
-          fillPage(panel, page);
+          // A pane restored from a full mode session would only show an error.
+          if (REDUCED) panel.dispose();
+          else fillPage(panel, page);
         },
       }),
     ),
@@ -201,12 +242,22 @@ function activate(context) {
     }),
   );
   statusButton(context, '$(link-external) Open app', 'Open the app you are building in a new browser tab', 'codelab.openApp', 103);
+  statusButton(context, '$(play) Build now', 'Save every file and build the app now', 'codelab.buildNow', 102.5);
   statusButton(context, '$(book) Guide', 'Show the codelab guide', 'codelab.showGuide', 102);
-  statusButton(context, '$(tools) Build log', 'Show the build log', 'codelab.showBuild', 101);
-  statusButton(context, '$(output) Output', 'Show what the app printed', 'codelab.showOutput', 101);
+  const where = REDUCED ? ' in a new browser tab' : '';
+  statusButton(context, '$(tools) Build log', 'Show the build log' + where, 'codelab.showBuild', 101);
+  statusButton(context, '$(output) Output', 'Show what the app printed' + where, 'codelab.showOutput', 101);
   statusButton(context, '$(wand) Fix imports', 'Add the imports the codelab code needs, in all five files', 'codelab.fixImports', 100);
 
   arrange({ guide: true, build: true, output: true, terminal: true });
+
+  if (REDUCED) {
+    vscode.window.showWarningMessage(
+      'This lab is in reduced mode, because it has no certificate that browsers trust. ' +
+        'The Build log and Output buttons open browser tabs, and the guide shows as plain text. ' +
+        'Your code, the build and the app work as usual.',
+    );
+  }
 }
 
 module.exports = { activate, deactivate() {} };

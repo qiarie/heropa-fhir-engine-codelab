@@ -33,7 +33,7 @@ export DEBIAN_FRONTEND=noninteractive
 APT=(apt-get -o DPkg::Lock::Timeout=600)
 
 # The images lab-init.sh and docker-compose.yml use besides the workspace.
-DOCKER_IMAGES=("nginx:1.27-alpine" "certbot/certbot:v3.0.1" "hapiproject/hapi:v8.12.0-2" "curlimages/curl:8.11.1")
+DOCKER_IMAGES=("nginx:1.27-alpine" "certbot/certbot:v5.10.0" "hapiproject/hapi:v8.12.0-2" "curlimages/curl:8.11.1")
 
 CODENAME=""
 REBOOT_REQUIRED=0

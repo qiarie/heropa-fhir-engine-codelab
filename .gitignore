@@ -2,3 +2,4 @@
 certs/
 letsencrypt/
 .gradle/
+.claude/

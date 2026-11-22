@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Rebuilds the web app whenever a source or Gradle file is saved.
+# Rebuilds the web app whenever a source or Gradle file is saved, and
+# whenever the build command asks for it.
 #
 # Gradle's own continuous mode is not used because it does not pick up edits to
 # build.gradle.kts. Each build here is an ordinary Gradle run that reuses the
@@ -13,7 +14,11 @@ cd "$CODELAB_DIR"
 TASK=":shared:wasmJsBrowserDevelopmentExecutableDistribution"
 SRC_DIR="shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
 FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
-DIRTY="$(mktemp -u /tmp/codelab-dirty.XXXXXX)"
+# A build starts when this file exists. The watches below create it after a
+# save, and the build command creates it on request.
+STATUS_DIR="$HOME/.codelab"
+mkdir -p "$STATUS_DIR"
+DIRTY="$STATUS_DIR/build-requested"
 EVENTS="close_write,create,delete,move"
 OUTPUT="$(mktemp /tmp/codelab-build.XXXXXX)"
 
@@ -36,8 +41,6 @@ trap 'kill $(jobs -p) 2>/dev/null' EXIT
 
 # Records what the watcher is doing in a small file that nginx serves. The
 # file is replaced in one move so a reader never sees half of it.
-STATUS_DIR="$HOME/.codelab"
-mkdir -p "$STATUS_DIR"
 BUILD=0
 status() {
     printf '{"state":"%s","build":"%s-%s","epoch":%s}\n' "$1" "$$" "$BUILD" "$(date '+%s')" \
@@ -95,7 +98,7 @@ while true; do
     rule
     if [[ "$status" -eq 0 ]]; then
         status ok
-        printf '%s  \033[1;32mBUILD OK\033[0m  The App tab reloads by itself.\n' "$(date '+%H:%M:%S')"
+        printf '%s  \033[1;32mBUILD OK\033[0m  The App tab reloads automatically.\n' "$(date '+%H:%M:%S')"
         still_to_do
     else
         printf '%s  \033[1;31mBUILD FAILED\033[0m  The lines starting with e above name the file, the line and the problem.\n' "$(date '+%H:%M:%S')"

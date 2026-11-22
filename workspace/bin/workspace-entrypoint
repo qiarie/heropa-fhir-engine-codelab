@@ -6,7 +6,21 @@
 
 set -euo pipefail
 
-[[ -n "${PASSWORD:-}" ]] || { echo "PASSWORD is not set. Start the lab with lab-init.sh." >&2; exit 1; }
+# IDE_AUTH is password or none. With none the editor opens for anyone who
+# reaches its address, terminal included, so password is the default.
+AUTH="${IDE_AUTH:-password}"
+case "$AUTH" in
+    password)
+        [[ -n "${PASSWORD:-}" ]] || { echo "PASSWORD is not set. Start the lab with lab-init.sh." >&2; exit 1; }
+        ;;
+    none)
+        echo "IDE_AUTH is none, so the editor asks for no password." >&2
+        ;;
+    *)
+        echo "IDE_AUTH must be password or none, not $AUTH." >&2
+        exit 1
+        ;;
+esac
 
 # A volume filled by an older image may lack the guide extension or hold an
 # older version of it. Installing again replaces it and takes a second.
@@ -26,7 +40,7 @@ LOG="$HOME/build.log"
 
 exec code-server \
     --bind-addr 0.0.0.0:8080 \
-    --auth password \
+    --auth "$AUTH" \
     --disable-telemetry \
     --disable-update-check \
     --disable-workspace-trust \

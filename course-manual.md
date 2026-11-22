@@ -2,13 +2,7 @@
 
 This guide takes you through the codelab on the Heropa lab, where you write the code in an editor in your browser and the app runs as a web page. A FHIR server for the app to talk to is already running in your lab. You install nothing.
 
-It is built on the [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/), which was written for Android Studio on your own computer. The passages that only make sense in Android Studio, or on your own computer, sit in a marked block like below.
-
-> **Android Studio only.** Skip this on the lab.
->
-> A passage from the published codelab that does not apply to the lab.
-
-Skip every block marked that way. If you would rather work in Android Studio, follow the [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/) instead of this guide.
+It is built on the [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/), which was written for Android Studio on your own computer. This guide covers the lab only. If you would rather work in Android Studio, follow the [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/) instead of this guide.
 
 The codelab text comes from the [Kotlin FHIR Engine](https://github.com/ohs-foundation/kotlin-fhir-engine) project under `codelabs` directory and is used under the Apache License 2.0.
 
@@ -36,17 +30,6 @@ On the lab you need only a recent version of Chrome, Edge, Firefox or Safari, in
 
 You do not need to know Kotlin. Every change is given in full, and this guide says exactly which file to open and where to put each line.
 
-> **Android Studio only.** Skip this on the lab.
->
-> *   Docker with Docker Compose ([get Docker](https://docs.docker.com/get-docker/))
-> *   A recent version of [Android Studio](https://developer.android.com/studio)
-> *   [Android Emulator](https://developer.android.com/studio/run/emulator) or a physical Android
->     device running Android 8.0 (API 26) or later
-> *   JDK 21
-> *   Optional: a Mac with [Xcode](https://developer.apple.com/xcode/) to run the iOS app
-> *   The sample code
-> *   Basic knowledge of Kotlin and [Jetpack Compose](https://developer.android.com/compose)
-
 This codelab is focused on the
 [Kotlin FHIR Engine](https://github.com/ohs-foundation/kotlin-fhir-engine). Non-relevant concepts
 and code blocks are glossed over and are provided for you to simply copy and paste. If you haven't
@@ -65,18 +48,28 @@ built a Kotlin Multiplatform app before, you can start by
    ./lab-init.sh
    ```
 
-3. Wait two to three minutes. Most of that is the FHIR server starting. The command ends by printing three addresses and a password, like this.
+3. Wait two to three minutes. Most of that is the FHIR server starting. The command ends with a summary like the example below. The addresses and the password in the example are placeholders and do not work. Use the ones your own terminal prints.
 
    ```text
+   ------------------------------------------------------------------------
    The lab is ready. Open these in the browser on your own computer.
 
      Editor            https://203-0-113-10.sslip.io/ide/
-     Editor password   1a2b3c4d5e6f
+     Editor password   4827
      App               https://203-0-113-10.sslip.io/preview/
      FHIR server       https://203-0-113-10.sslip.io/fhir/Patient
+
+   First steps
+     1. Open the Editor address and enter the password.
+     2. Click Open app at the very bottom of the Editor. The app opens in a
+        second tab.
+
+   Lost these details, or the tabs stopped loading? Run ./lab-init.sh again.
+   It is safe at any time and prints this summary again.
+   ------------------------------------------------------------------------
    ```
 
-Your addresses and password are your own. If you lose them, run `./lab-init.sh` again and it prints the same ones.
+**The addresses and password in this manual are examples only.** Wherever you see `203-0-113-10.sslip.io`, `203.0.113.10` or the password `4827`, use the values from your own summary instead. Your addresses and password are your own. You can get them back at any time, and the section **Find your addresses again** below explains how.
 
 The part of each address before `/ide/` is your lab address. In the example it is `https://203-0-113-10.sslip.io`. This guide says "your lab address" wherever the published codelab says `http://localhost:8080`.
 
@@ -84,7 +77,7 @@ The part of each address before `/ide/` is your lab address. In the example it i
 
 You work in two browser tabs, one for the Editor and one for the App. Open both in the same browser, because the app's output travels between them through that browser.
 
-1. Open the **Editor** address in a new tab. Paste the editor password and press **Submit**.
+1. Open the **Editor** address in a new tab. Type the editor password, which is a code of four digits, and press **Submit**. If the summary shows `none needed` instead of a password, the Editor opens without asking.
 2. In the bar at the very bottom of the Editor, click **Open app**. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the **App** address yourself.
 
 If you have room, put the two tabs side by side in separate windows.
@@ -100,11 +93,12 @@ The Editor tab has six areas. The last three share the space under the code, and
 | Terminal | Bottom centre, the tab next to Output | For typing commands |
 | Guide | Right | This guide |
 
-You can drag the borders between the areas to resize them. The bar at the very bottom has five buttons.
+You can drag the borders between the areas to resize them. The bar at the very bottom has six buttons.
 
 | Button | What it does |
 |---|---|
 | **Open app** | Opens the App tab |
+| **Build now** | Saves every open file and builds the app straight away. You rarely need it, because saving a file starts a build automatically. |
 | **Guide** | Brings the Guide back if you closed it |
 | **Build log** | Brings the Build log back if you closed it |
 | **Output** | Brings the Output tab back if you closed it |
@@ -115,37 +109,84 @@ The App tab has a bar along the top and a strip along the bottom.
 | Control | What it does |
 |---|---|
 | Status dot | Green when the app matches your code, amber while a build runs, red when the last build failed |
-| **Auto refresh** | When ticked, the app reloads by itself after every successful build |
+| **Auto refresh** | When ticked, the app reloads automatically after every successful build |
 | **Refresh** | Reloads the app now |
 | **Clear app data** | Empties the database the app keeps in your browser, then reloads the app. The patients on the FHIR server are not touched. |
 | **Output** | The strip along the bottom, which shows whatever the app prints. The Output tab in the Editor shows the same thing. |
 
+### Find your addresses again
+
+Come here when you return to the lab after a break, when the Editor or App tab stops loading, or when you have lost the addresses or the password.
+
+The lab VM stops when you close the course, when you stop it yourself, and when it sits idle for a while. Your code stays on it. The VM is set up to keep the same IP address, so the same addresses normally work again once it is running.
+
+1. Open the course in Heropa and start the VM if it is stopped. Give it two to three minutes, because the FHIR server takes that long to start.
+2. Reload the Editor and App tabs. If they load, you are done.
+3. If they do not load, or you no longer have the addresses, open the terminal of the VM and run the same two commands as before.
+
+   ```bash
+   cd ~/engine-codelab
+   ./lab-init.sh
+   ```
+
+4. Read the summary it prints. The lines under **Since the last run** tell you what to do.
+
+When the address is the same, the summary says so. Reload your tabs, or open the addresses again.
+
+```text
+Since the last run
+  Address    The same as before. Tabs you still have open work again after
+             a reload.
+  Password   The same as before.
+  Your code  Kept as you left it.
+```
+
+When the VM came back with a different IP address, the summary says `CHANGED` and shows the old address. The address in this example is a placeholder. Close the old Editor and App tabs, because they no longer work, and so do bookmarks to them. Open the new **Editor** address from the top of the summary, enter the password, and click **Open app**.
+
+```text
+Since the last run
+  Address    CHANGED. It was https://203-0-113-10.sslip.io
+             Close the old Editor and App tabs. They no longer work. Open
+             the two addresses above.
+  Password   The same as before.
+  Your code  Kept as you left it.
+```
+
+| What | After the VM restarts |
+|---|---|
+| Editor and App addresses | Normally the same. The summary says `CHANGED` when they are not. |
+| Editor password | Always the same |
+| Your code | Always kept as you left it |
+| FHIR server address | Changes together with the other two, since it is the same address followed by `/fhir/` |
+| FHIR server data | Goes back to the three test patients. Click **Clear app data** and then **Sync** in the App tab, so the app and the server agree again. |
+| Build log and Output | Start empty, and fill again at the next build and the next **Sync** |
+
+The command is safe to run at any time and as often as you like. It changes nothing when the address is the same. It always waits for the FHIR server to answer, which takes up to two minutes after a restart. When the address changed it also gets a certificate for the new address.
+
+Always copy the addresses from the summary. They are made from the IP address of the VM, normally with dashes instead of dots and `.sslip.io` at the end, so an example IP of `203.0.113.10` would give `https://203-0-113-10.sslip.io/ide/`. Sometimes the summary shows the plain IP, such as `https://203.0.113.10/ide/`, with a note that says why. Those addresses work in exactly the same way.
+
+### If the lab starts in reduced mode
+
+The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in **reduced mode**, and the summary from `./lab-init.sh` opens with the words `REDUCED MODE`. It also gives the reason, the pages to use, and when to try again.
+
+Your code, the build and the app all work in reduced mode. Two things are different.
+
+1. Your browser shows a warning page the first time you open the Editor address. Click **Advanced**, then **Proceed**. You do this once. The warning appears because the lab made its own certificate, and it is expected here.
+2. The Editor has no Guide, Build log or Output area, because browsers block them on a certificate they do not trust. A notice in the Editor says so. Use these in their place.
+
+| In full mode | In reduced mode |
+|---|---|
+| Guide area in the Editor | This manual in Heropa. The **Guide** button also opens it in the Editor as plain text. |
+| Build log area in the Editor | The **Build log** address that `./lab-init.sh` prints, in a separate browser tab. The **Build log** button opens it. |
+| Output area in the Editor | The **Output** strip along the bottom of the App tab |
+
+Everything else in this manual applies as written. Where a step says to look at the Build log or the Output tab, look at the page from the table.
+
+To get back to full mode, run `./lab-init.sh` again later. When it was refused for being over a limit, the summary gives the time to try again under **To get full mode**. That run asks for a certificate again and puts the lab back in full mode when it gets one. The addresses may change when that happens, so open the ones it prints.
+
 ### Download the code
 
 There is nothing to download on the lab. The code is already there, and the Editor opens on the `codelabs` folder. The Explorer on the left shows what is inside it.
-
-> **Android Studio only.** Skip this on the lab.
->
-> To download the code for this codelab, you only need the `codelabs` folder of the Kotlin FHIR
-> Engine repo. You can fetch just that part of the repo with a
-> [sparse checkout](https://git-scm.com/docs/git-sparse-checkout) (Git 2.25 or later):
->
-> ```shell
-> git clone --depth 1 --filter=blob:none --sparse https://github.com/ohs-foundation/kotlin-fhir-engine.git
-> cd kotlin-fhir-engine
-> git sparse-checkout set codelabs gradle
-> ```
->
-> The `gradle` folder is needed too, because the codelab reads its library versions from
-> `gradle/libs.versions.toml` at the root of the repo.
->
-> Alternatively, you can clone the whole repo:
->
-> ```shell
-> git clone https://github.com/ohs-foundation/kotlin-fhir-engine.git
-> ```
->
-> The starter project for this codelab is located in `codelabs/`.
 
 ### Start a local FHIR server with test data
 
@@ -158,7 +199,9 @@ To verify that the test data is available on the server, open the **FHIR server*
 
 If the page says the FHIR server is still starting, wait a minute and reload it.
 
-The picture in the block below shows that page on a local server.
+The picture below shows that page on a local server.
+
+![The test patients as the FHIR server returns them](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png)
 
 The test patients are in `data/patients.json`, which you can open from the Explorer. To put the server back to them, for example to run the update step again, type this in the **Terminal** tab of the Editor.
 
@@ -167,28 +210,6 @@ reset-server
 ```
 
 The server has no password. It holds only these made up patients, so do not put real data on it.
-
-> **Android Studio only.** Skip this on the lab.
->
-> The `codelabs` folder includes a Docker Compose file that starts a HAPI FHIR server and loads three
-> test patients into it. Run the following command in the `codelabs` folder:
->
-> ```shell
-> docker compose up -d
-> ```
->
-> The first run downloads the HAPI FHIR image, which can take a few minutes. After that, the server
-> starts in about half a minute. You can carry on with the next step while it starts.
->
-> To verify that the test data is available on the server, open the URL
-> `http://localhost:8080/fhir/Patient` in a browser. You should see a FHIR Bundle as the search
-> result with a `total` count of 3.
->
-> ![Test data on server](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png "Test data on server")
->
-> The test patients are in `data/patients.json`. To reset the server to them, for example to run the
-> update step again, run `docker compose down` and then `docker compose up -d`. When you're done
-> with the codelab, stop the server with `docker compose down`.
 
 ## 3. Set up the project
 
@@ -225,13 +246,6 @@ The same folder holds three more files, `App.kt`, `ForegroundSyncLauncher.kt` an
 
 There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.
 
-> **Android Studio only.** Skip this on the lab.
->
-> Let's start by importing the starter app into Android Studio.
->
-> Open Android Studio, select **Open** and choose the `codelabs` folder from the source code that you
-> have downloaded earlier.
-
 ### The Kotlin FHIR Engine dependency
 
 For your convenience, the Kotlin FHIR Engine dependencies have already been added to the
@@ -261,13 +275,6 @@ You change nothing in this part. It only shows what is already in the project.
 
 There is nothing to do on the lab. Every build the lab runs reads the Gradle files again.
 
-> **Android Studio only.** Skip this on the lab.
->
-> To be sure that all dependencies are available to your app, you should sync your project with
-> Gradle files at this point.
->
-> Select **Sync Project with Gradle Files** from the Android Studio toolbar.
-
 ### Run the starter app
 
 The starter app is already running on the lab as a web page. Look at the App tab.
@@ -277,39 +284,13 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 
 The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.
 
-> **Android Studio only.** Skip this on the lab.
->
-> Now that you have imported the project into Android Studio, you are ready to run the app for the
-> first time.
->
-> Connect your Android device via USB to your host, or
-> [start the Android Studio emulator](https://developer.android.com/studio/run/emulator). Select the
-> `androidApp` run configuration and click **Run** in the Android Studio toolbar. You can also
-> install the app from the command line, in the `codelabs` folder:
->
-> ```shell
-> ./gradlew :androidApp:installDebug
-> ```
->
-> <img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="Hello World app" width="400">
+![The Hello World app on an Android phone](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png)
 
 ### Run the app on other platforms
 
-The lab runs the Web (Wasm) version of the app. You do not type any command. The lab runs the build for you every time you save a file, as the next part explains.
+The lab runs the Web (Wasm) version of the app. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.
 
-> **Android Studio only.** Skip this on the lab.
->
-> Because the app is built with Kotlin Multiplatform, you can run it on other platforms too, at any
-> step of the codelab. Run the Gradle commands in the `codelabs` folder:
->
-> | Platform      | Command or action                                                                  |
-> |:--------------|:-----------------------------------------------------------------------------------|
-> | Desktop (JVM) | `./gradlew :shared:run`                                                            |
-> | Web (Wasm)    | `./gradlew :shared:wasmJsBrowserDevelopmentRun`, then open `http://localhost:8081` |
-> | iOS           | Open `iosApp/iosApp.xcodeproj` in Xcode, select a simulator, and click **Run**.    |
->
-> On iOS, Xcode builds the `shared` framework with Gradle. To run on a real device, see
-> [`iosApp/README.md`](https://github.com/ohs-foundation/kotlin-fhir-engine/blob/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/iosApp/README.md).
+The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/) shows how to run it on each of them.
 
 ### How to run the app
 
@@ -318,20 +299,39 @@ You do the same four things for every step of the codelab.
 1. Change a file in the Code area.
 2. Save it with Ctrl+S, or Cmd+S on a Mac. Saving starts a build.
 3. Watch the Build log under the code. It prints `Building the app` and then, after up to a minute, `BUILD OK`.
-4. Switch to the App tab. It has reloaded by itself and shows the new version.
+4. Switch to the App tab. It has reloaded automatically and shows the new version.
+
+**Builds are automatic.** The lab watches the project files. Every time you save one, it builds the app again and the App tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.
+
+If you save again while a build is running, the lab finishes that build and then runs one more, so your latest change is never missed.
+
+### Start a build yourself
+
+You rarely need to, but you can start a build without changing a file. Do this when you are not sure a build ran, when the Build log shows nothing new after a save, or when you want to see the result of the last build again.
+
+| Way | What to do |
+|---|---|
+| Button | Click **Build now** in the bar at the very bottom of the Editor. It saves every open file first, then builds. |
+| Command | Click the **Terminal** tab, type `build` and press Enter. This builds the files as they were last saved. |
+
+Either way, the build appears in the Build log like any other, and ends with `BUILD OK` or `BUILD FAILED`. When nothing changed since the last build, it finishes in a few seconds.
 
 After each successful build, the Build log also prints a **Still to do** list of the numbered comments that are still in the code. It gets shorter as you go and is a quick way to see where you are.
 
 Some steps change more than one file. Save each file as you finish it. A build in between may fail because the other files are not done yet, and that is fine. The build after your last save is the one that counts.
 
+### When a build fails
+
 If the Build log prints `BUILD FAILED`, look just above it for lines that start with `e`. Each one names the file, the line number and the problem. Under them, a **What to do** list explains the common ones in plain words. Fix the file and save again. The App tab keeps showing the last version that worked.
 
-If you have used Android Studio, this table shows what takes the place of each thing you know.
+### If you have used Android Studio
+
+This table shows what takes the place of each thing you know.
 
 | In Android Studio | On the lab |
 |---|---|
 | Open Android Studio | Use the Editor tab |
-| Click **Run** in the Android Studio toolbar | Save the file, wait for `BUILD OK`, look at the App tab |
+| Click **Run** in the Android Studio toolbar | Save the file, wait for `BUILD OK`, look at the App tab. **Build now** does the same without a change. |
 | Select **Sync Project with Gradle Files** | Nothing. Every build reads the Gradle files. |
 | Read Logcat | Read the **Output** tab in the Editor, next to the Build log |
 | Tap **Sync** or **Update** | Click **Sync** or **Update** |
@@ -411,16 +411,6 @@ Start with the five imports this step needs. The web editor does not add imports
 
 The `// 4 Imports` comment is not in the published codelab. The lab adds it to the starter code to mark the place.
 
-> **Android Studio only.** Skip this on the lab.
->
-> Along the way, Android Studio will prompt you to add the necessary imports:
->
-> *   `dev.ohs.fhir.engine.DatabaseErrorStrategy`
-> *   `dev.ohs.fhir.engine.FhirEngineConfiguration`
-> *   `dev.ohs.fhir.engine.FhirEngineProvider`
-> *   `dev.ohs.fhir.engine.ServerConfiguration`
-> *   `dev.ohs.fhir.engine.sync.remote.HttpLogger`
-
 1. Open `shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt`. Find the
     `// 4 Replace with code from the codelab to initialize the FHIR Engine.` comment in
     `initFhirEngine` and replace it with the following code:
@@ -464,18 +454,6 @@ The `// 4 Imports` comment is not in the published codelab. The lab adds it to t
     initFhirEngine(Unit, baseUrl = "${pageOrigin()}/fhir/", debug = true)
     ```
 
-    > **Android Studio only.** Skip this on the lab.
-    >
-    > On Android, `FhirApplication.onCreate()` calls it:
-    >
-    > ```kotlin
-    > initFhirEngine(this, baseUrl = "http://10.0.2.2:8080/fhir/", debug = BuildConfig.DEBUG)
-    > ```
-    >
-    > `10.0.2.2` is the host machine's `localhost` as seen from the Android emulator. Learn
-    > [more](https://developer.android.com/studio/run/emulator-networking). The Desktop, Web, and
-    > iOS entry points call it with `Unit` and `http://localhost:8080/fhir/`.
-
 3. Get the engine anywhere with `FhirEngineProvider.getInstance(platformContext)`.
 
 Now run it. Save `FhirEngineSetup.kt` with Ctrl+S, wait for `BUILD OK` in the Build log, then look at the App tab.
@@ -488,9 +466,9 @@ The page has a bar with **Sync** and **Update** buttons and a **Search by name**
 
 If the Build log prints `BUILD FAILED`, read the **What to do** list under the errors, or click **Fix imports** at the bottom of the Editor. If you would rather jump to the finished code, type `step 4` in the **Terminal** tab.
 
-> **Android Studio only.** Skip this on the lab.
->
-> <img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png" alt="Empty patient list" width="400">
+The picture below shows the empty patient list on an Android phone.
+
+![The empty patient list on an Android phone](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png)
 
 ## 5. Sync data with the FHIR server
 
@@ -498,16 +476,6 @@ In this step, you'll download patients from the FHIR server into the local datab
 local changes back to the server.
 
 This step changes four files. Each part below names its file, gives its imports first if it needs any, and then its code. Save each file when you finish its part. The app works once all four parts are in.
-
-> **Android Studio only.** Skip this on the lab.
->
-> Along the way, Android Studio will prompt you to add the necessary imports:
->
-> *   `dev.ohs.fhir.model.r4.Bundle`
-> *   `dev.ohs.fhir.engine.FhirEngineProvider`
-> *   `dev.ohs.fhir.engine.sync.AcceptLocalConflictResolver`
-> *   `dev.ohs.fhir.engine.sync.upload.HttpCreateMethod`
-> *   `dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod`
 
 ### Step 1: Define which resources to download
 
@@ -603,16 +571,7 @@ implementation, which is already in the starter:
 
 The lab runs the web app, so this is the launcher your app uses. A sync runs only while the App tab is open. The lab has added one line to `ForegroundSyncLauncher.kt`, which prints the reason when a sync fails so that you can read it in the Output tab.
 
-> **Android Studio only.** Skip this on the lab.
->
-> * **Android:** `AndroidSyncLauncher` enqueues `AppFhirSyncWorker` with WorkManager, so the sync
->   continues in the background. The worker delegates to `AppFhirSyncTask`.
->
->   ```kotlin
->   class AndroidSyncLauncher(private val context: Context) : SyncLauncher {
->     override suspend fun oneTimeSync() = Sync.oneTimeSync<AppFhirSyncWorker>(context)
->   }
->   ```
+On Android a different launcher keeps the sync running in the background. The [published codelab](https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/) describes it.
 
 ### Step 3: Start the sync
 
@@ -666,9 +625,9 @@ If nothing appears in the app after a few seconds, the sync failed. The app show
 
 If you would rather jump to the finished code, type `step 5` in the **Terminal** tab.
 
-> **Android Studio only.** Skip this on the lab.
->
-> <img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image8.png" alt="Patient list after sync" width="400">
+The picture below shows the patient list after a sync, on an Android phone.
+
+![The patient list after a sync on an Android phone](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image8.png)
 
 ## 6. Modify and upload patient data
 
@@ -688,13 +647,7 @@ Start with the two imports this step needs.
    import dev.ohs.fhir.model.r4.String as FhirString
    ```
 
-Copy the second line exactly, with `as FhirString` at its end. The part named "One name, two meanings" earlier in this guide explains why.
-
-> **Android Studio only.** Skip this on the lab.
->
-> Along the way, Android Studio will prompt you to add the necessary import:
->
-> *   `dev.ohs.fhir.engine.search.StringFilterModifier`
+Copy the second line exactly, with `as FhirString` at its end. The section "One name, two meanings" earlier in this guide explains why.
 
 You'll also need the Kotlin FHIR `String` type. It has the same name as Kotlin's own `String`, so
 add it by hand with an alias:
@@ -875,11 +828,6 @@ Each click on **Update** swaps the two cities again, so a second click puts them
 
 If you would rather jump to the finished code, type `step 6` in the **Terminal** tab.
 
-> **Android Studio only.** Skip this on the lab.
->
-> 2. Open `http://localhost:8080/fhir/Patient/` in a browser. Verify that the address cities for
->     patients `Aaron697` and `Abby752` are updated on the local FHIR server.
-
 ## 7. Search for patients by name
 
 In this step, you'll filter the patient list by the name typed in the search field.
@@ -920,9 +868,9 @@ On the lab, click in the **Search by name** field of the App tab and type `Abby`
 
 If you would rather jump to the finished code, type `step 7` in the **Terminal** tab.
 
-> **Android Studio only.** Skip this on the lab.
->
-> <img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png" alt="Patient list filtered by name" width="400">
+The picture below shows the list filtered by name, on an Android phone.
+
+![The patient list filtered by name on an Android phone](https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png)
 
 ## 8. Congratulations!
 
@@ -957,7 +905,8 @@ The other platforms need tools the lab does not have. To try them, follow the [p
 
 | Symptom | Fix |
 |---|---|
-| The App tab says the app is still building | Wait for `BUILD OK` in the Build log. The page reloads by itself. |
+| You saved a file and the Build log shows no new build | Check the file's tab for a white dot, which means it is not saved yet. Then click **Build now** at the very bottom of the Editor, or type `build` in the **Terminal** tab. |
+| The App tab says the app is still building | Wait for `BUILD OK` in the Build log. The page reloads automatically. |
 | The App tab did not change after a build | Check that **Auto refresh** is ticked, or click **Refresh**. If it still shows the old version, check that the Build log says `BUILD OK` and not `BUILD FAILED`. |
 | `Unresolved reference` in the Build log | An import is missing or misspelled. Click **Fix imports**, or compare your imports with the ones the step gives. |
 | Errors about a type mismatch on `String`, or on `city` | The file imports `dev.ohs.fhir.model.r4.String` without `as FhirString` at the end. Add the ending, or click **Fix imports**. |
@@ -976,4 +925,8 @@ The other platforms need tools the lab does not have. To try them, follow the [p
 | **Open app** does nothing | The browser blocked the new tab. Allow pop-ups for the lab address, or open the **App** address that `./lab-init.sh` printed. |
 | The code is in a state you cannot fix | Type `step reset` in the **Terminal** tab, or `step` with the number of the last step you finished. |
 | The Editor asks for the password again | Run `./lab-init.sh` in the Heropa terminal. It prints the same password. |
-| You came back and the tabs do not load | The VM was stopped while idle. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click **Clear app data** and **Sync**, because the server starts again from the three test patients. |
+| You came back and the tabs do not load | The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click **Clear app data** and **Sync**, because the server starts again from the three test patients. If they still do not load, run `./lab-init.sh` in its terminal and read **Since the last run** in what it prints. When that says `CHANGED`, open the new addresses. See **Find your addresses again**. |
+| The Editor or App address stopped working | The same cause and the same fix as the row above. |
+| You lost the addresses or the password | Run `./lab-init.sh` in the Heropa terminal. It prints them again. |
+| The browser warns that the connection is not private | The lab is in reduced mode. Click **Advanced**, then **Proceed**. See **If the lab starts in reduced mode**. |
+| The Editor shows a notice about reduced mode, or has no Guide, Build log or Output area | The lab could not get a trusted certificate. Use the pages listed under **If the lab starts in reduced mode**, and run `./lab-init.sh` again later. |

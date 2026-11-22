@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#
+# Starts a build of the web app now, without waiting for a file to be saved.
+#
+# The build watcher does the work. This command only leaves the request file
+# the watcher looks for, so the build shows in the Build log like any other.
+# The Build now button at the bottom of the editor runs this command.
+
+set -euo pipefail
+
+STATUS_DIR="$HOME/.codelab"
+mkdir -p "$STATUS_DIR"
+
+if grep -q '"state":"building"' "$STATUS_DIR/status.json" 2>/dev/null; then
+    echo "A build is running already. Another one starts as soon as it ends."
+else
+    echo "A build has started. Watch the Build log for BUILD OK or BUILD FAILED."
+fi
+touch "$STATUS_DIR/build-requested"
