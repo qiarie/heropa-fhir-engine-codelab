@@ -2,7 +2,7 @@
   "name": "codelab-guide",
   "displayName": "Codelab guide",
   "description": "Lays out the code, the build log, the app output and the course manual when the editor opens.",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "publisher": "ohs",
   "engines": {
     "vscode": "^1.80.0"
@@ -44,6 +44,12 @@
         "command": "codelab.showOutput",
         "title": "Codelab: Show the output"
       }
+    ],
+    "markdown.previewScripts": [
+      "./preview/copy.js"
+    ],
+    "markdown.previewStyles": [
+      "./preview/copy.css"
     ]
   }
 }

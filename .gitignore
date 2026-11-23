@@ -3,3 +3,4 @@ certs/
 letsencrypt/
 .gradle/
 .claude/
+nginx/html/qr/

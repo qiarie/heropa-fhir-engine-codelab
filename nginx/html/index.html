@@ -17,6 +17,11 @@
     a.card strong { display: block; font-size: 1.15rem; color: var(--accent); }
     @media (prefers-color-scheme: dark) { :root { --accent: #bb86fc; } }
     ol { padding-left: 20px; }
+    .qr { display: flex; gap: 16px; align-items: center; margin: 0 0 32px; }
+    .qr img { flex: none; width: 132px; height: 132px; border-radius: 8px; background: #fff; }
+    .qr[hidden] { display: none; }
+    .qr p { margin: 0; }
+    .qr strong { display: block; }
     code { background: color-mix(in srgb, CanvasText 10%, transparent); padding: 1px 5px; border-radius: 4px; }
   </style>
 </head>
@@ -28,6 +33,10 @@
     <a class="card" href="/ide/" target="_blank" rel="noopener"><strong>Editor</strong>Your code, the guide and the build log. It asks for the password your lab printed.</a>
     <a class="card" href="/preview/" target="_blank" rel="noopener"><strong>App</strong>The app you are building. It reloads automatically after each build.</a>
     <a class="card" href="/fhir/Patient" target="_blank" rel="noopener"><strong>FHIR server</strong>The patients on the server your app syncs with. It takes a minute or two to start.</a>
+  </div>
+  <div class="qr" hidden>
+    <img src="/qr/app.svg" alt="QR code for the App address" onload="this.parentNode.hidden = false">
+    <p><strong>The App on a phone or tablet</strong>Scan this code with the camera of the device. The App opens in its browser.</p>
   </div>
   <ol>
     <li>Change a file in the Editor and save it with <code>Ctrl+S</code>.</li>

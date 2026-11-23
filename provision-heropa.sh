@@ -96,7 +96,7 @@ preflight() {
         "${APT[@]}" upgrade -y
     fi
 
-    apt_install ca-certificates curl git openssl
+    apt_install ca-certificates curl git openssl qrencode
 }
 
 # --- 2. docker --------------------------------------------------------------

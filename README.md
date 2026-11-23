@@ -358,6 +358,7 @@ The addresses in this document and in the manual, such as `203-0-113-10.sslip.io
 | `LAB_HTTPS_PORT` | A port number | `443` | The HTTPS port nginx publishes |
 | `CERTBOT_EMAIL` | Empty, or an email address | Empty | An address for the Let's Encrypt account |
 | `LAB_ACME_SERVER` | Empty, or a directory URL | Empty | The service asked for certificates. Empty means the real Let's Encrypt. |
+| `LAB_QR` | `on` or `off` | `on` | Whether the summary prints QR codes for the Editor and the App |
 
 ### The options of IDE_AUTH
 
@@ -397,6 +398,22 @@ The section **Certificates and reduced mode** explains the tries and the fallbac
 | Empty | An IP | Made from that IP, for a machine with no metadata service |
 | `localhost` | Ignored | `http://localhost`, with `LAB_CERT` set to `none` |
 | Another name | Ignored | That name, which must already point at the machine |
+
+### QR codes and the options of LAB_QR
+
+`./lab-init.sh` and `./lab-init.sh --info` print two QR codes under the addresses, one for the Editor and one for the App. The start page of the lab shows a code for the App as well. A learner scans a code with a phone or tablet to open that address there without typing it.
+
+| Value | What the summary shows | When to use it |
+|---|---|---|
+| `on` | The addresses, then the two codes | On Heropa, unless the terminal cannot draw them |
+| `off` | The addresses alone | When the Heropa terminal shows the codes as broken characters |
+
+- The codes hold addresses only. The password is never in a code, so the Editor still asks for it on the phone.
+- The codes need the `qrencode` package, which `provision-heropa.sh` installs. On a VM prepared before this was added, run `sudo apt-get install -y qrencode` once. Without the package the lab works as before and shows no codes.
+- The codes in the terminal are drawn with block characters. They appear only when the output goes to a terminal, so a log file stays clean.
+- The code on the start page is a picture, so `LAB_QR` does not affect it. The script draws it again on every run in `nginx/html/qr/`, which git ignores.
+- A lab on `localhost` gets no codes, because a phone cannot reach that address.
+- The App works on a phone. The Editor opens there too, but the codelab needs a keyboard and a wide screen, so learners should do the work on a computer.
 
 ### Values the script writes
 

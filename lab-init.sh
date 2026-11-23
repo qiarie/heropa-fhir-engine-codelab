@@ -52,6 +52,9 @@
 #   IDE_AUTH         password or none. none makes the editor ask for no
 #                    password, which opens its terminal to anyone who reaches
 #                    the lab address. The default is password.
+#   LAB_QR           on or off. on prints QR codes for the Editor and the App
+#                    under the addresses, when qrencode is installed. The
+#                    default is on.
 #   CERTBOT_EMAIL    Let's Encrypt account address, optional
 #   LAB_HTTP_PORT and LAB_HTTPS_PORT, the ports nginx publishes
 #
@@ -139,6 +142,57 @@ EOF
     [[ "$LAB_MODE" == full ]] || printf '  Build log         %s/buildlog/\n' "$LAB_URL"
 }
 
+# A phone cannot reach an address on this machine, so a lab on localhost gets
+# no QR codes.
+#
+# Prints QR codes for the Editor and the App side by side, so a learner can
+# open either on a phone or tablet without typing the address. The codes hold
+# the addresses only, never the password. Nothing is printed when LAB_QR is
+# off, when qrencode is missing or when the output is not a terminal, because
+# the codes are drawn with block characters that only a terminal shows.
+qr_reachable() {
+    [[ "$LAB_URL" != *://localhost* && "$LAB_URL" != *://127.0.0.1* ]]
+}
+
+print_qr_codes() {
+    [[ "${LAB_QR:-on}" == on && -t 1 ]] || return 0
+    qr_reachable || return 0
+    command -v qrencode >/dev/null 2>&1 || return 0
+    local editor="$LAB_URL/ide/" app="$LAB_URL/preview/"
+    local left=() right=() width blank i rows
+    # -v 3 is the smallest size that holds a lab address, and asking for it
+    # for both keeps the two codes the same size.
+    mapfile -t left  < <(qrencode -t ANSIUTF8 -m 2 -v 3 "$editor" 2>/dev/null)
+    mapfile -t right < <(qrencode -t ANSIUTF8 -m 2 -v 3 "$app" 2>/dev/null)
+    (( ${#left[@]} && ${#right[@]} )) || return 0
+    # The ASCII form draws every square as two plain characters, which gives
+    # the width of the left code without counting escape codes.
+    width="$(qrencode -t ASCII -m 2 -v 3 "$editor" 2>/dev/null | sed -n 1p)"
+    width=$(( ${#width} / 2 ))
+    printf -v blank '%*s' "$width" ''
+    rows=$(( ${#left[@]} > ${#right[@]} ? ${#left[@]} : ${#right[@]} ))
+    echo
+    echo "  Scan a code with a phone or tablet camera to open that address there."
+    echo
+    printf '  %-*s    %s\n' "$width" "Editor" "App"
+    for (( i = 0; i < rows; i++ )); do
+        printf '  %s    %s\n' "${left[i]:-$blank}" "${right[i]:-}"
+    done
+}
+
+# Draws the QR code the start page shows for the App. An old picture is
+# removed first, so the page never shows a code for an address the lab has
+# left. Without qrencode there is no picture and the page leaves the code out.
+write_app_qr() {
+    local dir="$SCRIPT_DIR/nginx/html/qr"
+    mkdir -p "$dir"
+    rm -f "$dir/app.svg"
+    qr_reachable || return 0
+    command -v qrencode >/dev/null 2>&1 || return 0
+    qrencode -t SVG -m 2 -o "$dir/app.svg" "$LAB_URL/preview/" 2>/dev/null \
+        || rm -f "$dir/app.svg"
+}
+
 # --- --info -------------------------------------------------------------------
 
 # Reads the addresses and the password back from .env. It asks for no
@@ -151,6 +205,7 @@ if (( INFO )); then
     LAB_MODE="$(env_get LAB_MODE)"
     IDE_PASSWORD="$(env_get IDE_PASSWORD)"
     IDE_AUTH="$(env_get IDE_AUTH)"
+    LAB_QR="$(setting LAB_QR)"
     [[ -n "$LAB_URL" ]] || error ".env has no lab address yet. Run ./lab-init.sh first."
 
     echo
@@ -158,6 +213,7 @@ if (( INFO )); then
     echo "Open these in the browser on your own computer."
     echo
     print_addresses
+    print_qr_codes
     if [[ "$LAB_MODE" != full ]]; then
         echo
         echo "The lab is in REDUCED MODE. Run ./lab-init.sh to try for a trusted"
@@ -239,6 +295,10 @@ IDE_AUTH="$(setting IDE_AUTH)"
 IDE_AUTH="${IDE_AUTH:-password}"
 [[ "$IDE_AUTH" == password || "$IDE_AUTH" == none ]] \
     || error "IDE_AUTH must be password or none, not $IDE_AUTH"
+LAB_QR="$(setting LAB_QR)"
+LAB_QR="${LAB_QR:-on}"
+[[ "$LAB_QR" == on || "$LAB_QR" == off ]] \
+    || error "LAB_QR must be on or off, not $LAB_QR"
 CERTBOT_EMAIL="$(setting CERTBOT_EMAIL)"
 ACME_SERVER="$(setting LAB_ACME_SERVER)"
 
@@ -485,6 +545,8 @@ if [[ "$LAB_CERT" == none ]]; then env_set LAB_FHIR_HTTPS "false"; else env_set 
 env_set LAB_HTTP_PORT  "$HTTP_PORT"
 env_set LAB_HTTPS_PORT "$HTTPS_PORT"
 
+write_app_qr
+
 # --- 5. start ---------------------------------------------------------------
 
 if (( RESET )); then
@@ -556,6 +618,7 @@ $headline
 
 EOF
 print_addresses
+print_qr_codes
 
 if [[ -z "$PREV_URL" ]]; then
     cat <<EOF
