@@ -11,6 +11,8 @@
 #   ./lab-init.sh            start the lab
 #   ./lab-init.sh --reset    throw away the learner's code and the FHIR server
 #                            data and start again from the starter
+#   ./lab-init.sh --info     print the addresses and the password again,
+#                            without starting or changing anything
 #   ./lab-init.sh --clean    stop everything and remove .env, the password and
 #                            the certificate, ready for saving as a template
 #
@@ -80,11 +82,13 @@ compose() { docker compose --project-directory "$SCRIPT_DIR" "$@"; }
 
 RESET=0
 CLEAN=0
+INFO=0
 for arg in "$@"; do
     case "$arg" in
         --reset) RESET=1 ;;
         --clean) CLEAN=1 ;;
-        *)       error "Unknown option $arg. Use --reset, --clean or nothing." ;;
+        --info)  INFO=1 ;;
+        *)       error "Unknown option $arg. Use --reset, --clean, --info or nothing." ;;
     esac
 done
 
@@ -120,6 +124,58 @@ env_set() {
     cat "$tmp" > "$ENV_FILE"
     rm -f "$tmp"
 }
+
+# Prints the lab's addresses and the editor password. The closing summary and
+# --info both use it, so the two always agree.
+print_addresses() {
+    local password="$IDE_PASSWORD"
+    [[ "$IDE_AUTH" == none ]] && password="none needed"
+    cat <<EOF
+  Editor            $LAB_URL/ide/
+  Editor password   $password
+  App               $LAB_URL/preview/
+  FHIR server       $LAB_URL/fhir/Patient
+EOF
+    [[ "$LAB_MODE" == full ]] || printf '  Build log         %s/buildlog/\n' "$LAB_URL"
+}
+
+# --- --info -------------------------------------------------------------------
+
+# Reads the addresses and the password back from .env. It asks for no
+# certificate and leaves the containers alone, so it answers at once. It does
+# not read the public IP again, so after the IP changes it still shows the old
+# address. A full run of ./lab-init.sh is what moves the lab to a new one.
+if (( INFO )); then
+    [[ -f "$ENV_FILE" ]] || error "There is no .env yet, so the lab has not been set up. Run ./lab-init.sh first."
+    LAB_URL="$(env_get LAB_URL)"
+    LAB_MODE="$(env_get LAB_MODE)"
+    IDE_PASSWORD="$(env_get IDE_PASSWORD)"
+    IDE_AUTH="$(env_get IDE_AUTH)"
+    [[ -n "$LAB_URL" ]] || error ".env has no lab address yet. Run ./lab-init.sh first."
+
+    echo
+    echo "------------------------------------------------------------------------"
+    echo "Open these in the browser on your own computer."
+    echo
+    print_addresses
+    if [[ "$LAB_MODE" != full ]]; then
+        echo
+        echo "The lab is in REDUCED MODE. Run ./lab-init.sh to try for a trusted"
+        echo "certificate again."
+    fi
+    echo
+    echo "The tabs stopped loading? Run ./lab-init.sh to check the address and"
+    echo "start anything that stopped."
+    echo "------------------------------------------------------------------------"
+
+    running=""
+    if docker info >/dev/null 2>&1; then
+        running="$(compose ps --services --status running 2>/dev/null || true)"
+        grep -qx nginx <<<"$running" && grep -qx workspace <<<"$running" \
+            || warn "The lab is not fully running. Run ./lab-init.sh to start it."
+    fi
+    exit 0
+fi
 
 # --- 1. preflight -----------------------------------------------------------
 
@@ -483,14 +539,12 @@ else
     headline="The lab is ready, in REDUCED MODE. Your code, the build and the app all work."
 fi
 
-# With IDE_AUTH=none the editor asks for nothing, and the summary says so in
-# place of the password.
+# With IDE_AUTH=none the editor asks for nothing, and print_addresses says so
+# in place of the password.
 if [[ "$IDE_AUTH" == none ]]; then
-    password_shown="none needed"
     open_editor="Open the Editor address. It asks for no password."
     password_note="Not asked for on this lab."
 else
-    password_shown="$IDE_PASSWORD"
     open_editor="Open the Editor address and enter the password."
     password_note="The same as before."
 fi
@@ -500,12 +554,8 @@ cat <<EOF
 ------------------------------------------------------------------------
 $headline
 
-  Editor            $LAB_URL/ide/
-  Editor password   $password_shown
-  App               $LAB_URL/preview/
-  FHIR server       $LAB_URL/fhir/Patient
 EOF
-[[ "$LAB_MODE" == full ]] || printf '  Build log         %s/buildlog/\n' "$LAB_URL"
+print_addresses
 
 if [[ -z "$PREV_URL" ]]; then
     cat <<EOF
@@ -587,7 +637,7 @@ fi
 
 cat <<EOF
 
-Lost these details, or the tabs stopped loading? Run ./lab-init.sh again.
-It is safe at any time and prints this summary again.
+Lost these details? Run ./lab-init.sh --info to print them again.
+The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 ------------------------------------------------------------------------
 EOF

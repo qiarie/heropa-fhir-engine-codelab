@@ -446,6 +446,6 @@ Browsers treat `http://localhost` as a secure page, so the editor and the browse
 | `/fhir/Patient` shows a `total` of 0 | Read `docker compose logs seed`. To load the patients by hand, run `docker exec engine-workspace reset-server`. |
 | The app loads but never shows its first screen | The isolation headers are missing. Check them with `curl -sI <lab address>/app/`. |
 | A build stops with `returns 127` | `libatomic1` is missing from the image. The Dockerfile installs it, so the image was changed. |
-| The editor asks for a password nobody has | Run `./lab-init.sh` again. It prints the password. |
+| The editor asks for a password nobody has | Run `./lab-init.sh --info`. It prints the addresses and the password without restarting anything. |
 | A learner broke their code beyond repair | In the editor terminal run `step reset`, or on the VM run `./lab-init.sh --reset`. |
 | Builds are killed or the VM swaps | The VM has less than 16 GB. Use a larger instance type. |

@@ -64,8 +64,8 @@ built a Kotlin Multiplatform app before, you can start by
      2. Click Open app at the very bottom of the Editor. The app opens in a
         second tab.
 
-   Lost these details, or the tabs stopped loading? Run ./lab-init.sh again.
-   It is safe at any time and prints this summary again.
+   Lost these details? Run ./lab-init.sh --info to print them again.
+   The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
    ------------------------------------------------------------------------
    ```
 
@@ -442,7 +442,7 @@ The `// 4 Imports` comment is not in the published codelab. The lab adds it to t
     * `enableEncryption = true` encrypts the database with SQLCipher. It is supported on Android
       only.
 
-    The comment is near line 35 now that the imports are in, on the last line before the closing brace of the file. Press Ctrl+F and type `// 4 Replace` to jump to it. Select that one line, delete it and paste the block above where it was. The new block starts with its own numbered comment, `// 4 Initialize the FHIR Engine`.
+    The comment is on line 35 now that the imports are in, on the last line before the closing brace of the file. Press Ctrl+F and type `// 4 Replace` to jump to it. Select that one line, delete it and paste the block above where it was. The new block starts with its own numbered comment, `// 4 Initialize the FHIR Engine`.
 
     On the lab you do not need the browser console. The lab copies what the app logs there into the **Output** tab of the Editor.
 
@@ -479,18 +479,34 @@ This step changes four files. Each part below names its file, gives its imports 
 
 ### Step 1: Define which resources to download
 
-Open `DownloadWorkManagerImpl.kt` in `commonMain`. It is in the same folder as `FhirEngineSetup.kt`, so click it in the Explorer.
+Open `DownloadWorkManagerImpl.kt` in `commonMain`. Make the three changes below in order, because each one moves the lines under it down.
 
-Add the import first. Find the `// 5.1 Import for the download manager` comment on line 22, just under the import lines, and replace it with the following code.
+Replace line 22 with the following code.
 
 ```kotlin
 // 5.1 Import for the download manager
 import dev.ohs.fhir.model.r4.Bundle
 ```
 
-Replace the two
-`// 5.1 Replace with code from the codelab ...` comments, and the `return` lines below them, so that
-the class looks like this:
+Replace lines 29 and 30, in `getNextRequest()`, with the following code.
+
+```kotlin
+// 5.1 Return the next download request
+val url = urls.removeFirstOrNull() ?: return null
+return DownloadRequest.of(url)
+```
+
+Replace lines 37 and 38, in `processResponse()`, with the following code.
+
+```kotlin
+// 5.1 Extract the resources from the response
+if (response is Bundle && response.type.value == Bundle.BundleType.Searchset) {
+  return response.entry.mapNotNull { it.resource }
+}
+return emptyList()
+```
+
+The class now looks like this. Save the file.
 
 ```kotlin
 class DownloadWorkManagerImpl : DownloadWorkManager {
@@ -514,16 +530,14 @@ class DownloadWorkManagerImpl : DownloadWorkManager {
 }
 ```
 
-The simplest way is to replace the whole class. Select everything from the line `class DownloadWorkManagerImpl : DownloadWorkManager {` to the last closing brace of the file, delete it and paste the block above. Leave the lines above the class, which are the licence comment, the `package` line and the imports, as they are. Then save the file.
-
 This class has a queue of URLs to download. It extracts the resources from each returned bundle,
 and the engine saves them in the local database.
 
 ### Step 2: Define how the app syncs
 
-Open `AppFhirSyncTask.kt` in `commonMain`, from the same folder.
+Open `AppFhirSyncTask.kt` in `commonMain`. Make the two changes below in order.
 
-Add the imports first. Find the `// 5.2 Imports for the sync task` comment on line 23, just under the import lines, and replace it with the following code.
+Replace line 23 with the following code.
 
 ```kotlin
 // 5.2 Imports for the sync task
@@ -533,32 +547,28 @@ import dev.ohs.fhir.engine.sync.upload.HttpCreateMethod
 import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod
 ```
 
-Replace the
-`// 5.2 Replace the functions below with code from the codelab to define how the app syncs.`
-comment and the four functions below it, so that the class looks like this:
+Replace lines 31 to 39, which are the `// 5.2 Replace` comment and the four functions under it, with the following code. Keep the closing brace on line 40.
 
 ```kotlin
-class AppFhirSyncTask(private val platformContext: Any) : FhirSyncTask {
-  // 5.2 Define the download manager, conflict resolver, FHIR Engine and upload strategy
-  override fun getDownloadWorkManager(): DownloadWorkManager = DownloadWorkManagerImpl()
+// 5.2 Define the download manager, conflict resolver, FHIR Engine and upload strategy
+override fun getDownloadWorkManager(): DownloadWorkManager = DownloadWorkManagerImpl()
 
-  override fun getConflictResolver(): ConflictResolver = AcceptLocalConflictResolver
+override fun getConflictResolver(): ConflictResolver = AcceptLocalConflictResolver
 
-  override fun getFhirEngine(): FhirEngine = FhirEngineProvider.getInstance(platformContext)
+override fun getFhirEngine(): FhirEngine = FhirEngineProvider.getInstance(platformContext)
 
-  override fun getUploadStrategy(): UploadStrategy =
-    UploadStrategy.forBundleRequest(
-      methodForCreate = HttpCreateMethod.PUT,
-      methodForUpdate = HttpUpdateMethod.PATCH,
-      squash = true,
-      bundleSize = 500,
-    )
-}
+override fun getUploadStrategy(): UploadStrategy =
+  UploadStrategy.forBundleRequest(
+    methodForCreate = HttpCreateMethod.PUT,
+    methodForUpdate = HttpUpdateMethod.PATCH,
+    squash = true,
+    bundleSize = 500,
+  )
 ```
 
-Again the simplest way is to replace the whole class. Select everything from the line `class AppFhirSyncTask(private val platformContext: Any) : FhirSyncTask {` to the last closing brace of the file, delete it and paste the block above. Leave the comment line just above the class, which starts with `/**`, in place. Then save the file.
+Save the file.
 
-The four functions in the starter each end in `TODO()`. Code like that builds without error and only fails when the app runs, so check that none is left. The **Still to do** list in the Build log names any that is.
+Code that ends in `TODO()` builds without error and only fails when the app runs, so check that none is left. The **Still to do** list in the Build log names any that is.
 
 Here, we've defined which download manager, conflict resolver, and FHIR Engine instance to use for
 syncing. All platforms use this class.
@@ -924,9 +934,9 @@ The other platforms need tools the lab does not have. To try them, follow the [p
 | The Guide, Build log or Output area is gone | Click its name in the bar at the very bottom of the Editor. |
 | **Open app** does nothing | The browser blocked the new tab. Allow pop-ups for the lab address, or open the **App** address that `./lab-init.sh` printed. |
 | The code is in a state you cannot fix | Type `step reset` in the **Terminal** tab, or `step` with the number of the last step you finished. |
-| The Editor asks for the password again | Run `./lab-init.sh` in the Heropa terminal. It prints the same password. |
+| The Editor asks for the password again | Run `./lab-init.sh --info` in the Heropa terminal. It prints the same password without restarting anything. |
 | You came back and the tabs do not load | The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click **Clear app data** and **Sync**, because the server starts again from the three test patients. If they still do not load, run `./lab-init.sh` in its terminal and read **Since the last run** in what it prints. When that says `CHANGED`, open the new addresses. See **Find your addresses again**. |
 | The Editor or App address stopped working | The same cause and the same fix as the row above. |
-| You lost the addresses or the password | Run `./lab-init.sh` in the Heropa terminal. It prints them again. |
+| You lost the addresses or the password | Run `./lab-init.sh --info` in the Heropa terminal. It prints them again. |
 | The browser warns that the connection is not private | The lab is in reduced mode. Click **Advanced**, then **Proceed**. See **If the lab starts in reduced mode**. |
 | The Editor shows a notice about reduced mode, or has no Guide, Build log or Output area | The lab could not get a trusted certificate. Use the pages listed under **If the lab starts in reduced mode**, and run `./lab-init.sh` again later. |
