@@ -96,7 +96,7 @@ The Editor tab has six areas. The last three share the space under the code, and
 | Build log | Bottom centre | Shows each build, whether it worked and which steps are still to do |
 | Output | Bottom centre, the tab next to Build log | Shows what the app prints. From step 4 on that is every request the app sends to the FHIR server, and the reason when a sync fails. |
 | Terminal | Bottom centre, the tab next to Output | For typing commands |
-| Guide | Right | This guide |
+| Guide | Right | This guide, one step at a time. **Back** and **Next** move between the steps, the list between them jumps to any step, and **Show all** puts the whole guide on one page. |
 
 You can drag the borders between the areas to resize them. The bar at the very bottom has six buttons.
 

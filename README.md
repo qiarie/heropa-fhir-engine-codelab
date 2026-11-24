@@ -115,6 +115,7 @@ The editor colours Kotlin but has no code completion, no import prompts and no e
 | Still to do | After a good build, the panel lists every numbered codelab comment and every `TODO()` still in the five files. A `TODO()` left in `AppFhirSyncTask.kt` builds without error and only fails when the learner clicks **Sync**, so the build alone cannot report it. The Output tab then shows `NotImplementedError`, and the preview page adds a line saying which step to finish. |
 | `fix-imports` | Adds the imports the code in the five files needs and repairs the `String` import. A **Fix imports** button in the status bar runs it. |
 | `step N` | Replaces the five files with a working version of step N, from 4 to 7. |
+| `step reset` | Puts the five files back to the starter code. |
 | `reset-server` | Loads the three test patients into the FHIR server again. |
 
 The most common mistake is importing `dev.ohs.fhir.model.r4.String` in step 6 without `as FhirString`. The FHIR type and Kotlin's own `String` share that name. The manual has a part on this, named "What this editor does not do for you".
@@ -320,10 +321,12 @@ VS Code has no setting that opens files or pages when it starts, so a small exte
 
 | Area | How it is made |
 |---|---|
-| Guide | The Markdown preview that ships with the editor, opened on `course-manual.md` |
+| Guide | The Markdown preview that ships with the editor, opened on `course-manual.md`. The extension adds a Copy button to each code block and shows one step at a time. |
 | Build log | A web view that frames `/buildlog/` |
 | Output | A web view that frames `/output/` |
 | Terminal | An ordinary terminal, placed in a tab next to the output |
+
+The Guide treats each second level heading of the manual as one step. A bar at the top has **Back**, **Next**, a list of the steps and a **Show all** switch, and the same two buttons sit under the text. The step on screen is remembered in the learner's browser. `preview/steps.js` in the extension does this by hiding the other steps, so the manual file needs no markup for it. A new second level heading in the manual becomes a new step on its own. Searching the Guide finds text in the step on screen only, unless **Show all** is on.
 
 The status bar has six buttons. **Open app** opens `/preview/` in a new browser tab. **Build now** saves every open file and starts a build. **Guide**, **Build log** and **Output** reopen an area that was closed. **Fix imports** runs the `fix-imports` helper. The layout comes back after a page reload.
 
@@ -427,6 +430,33 @@ Do not edit these, because the next run replaces them.
 | `LAB_MODE` | `full` or `reduced` | Whether browsers trust the certificate in use |
 | `LAB_NGINX_CONF` | `lab-https` or `lab-http` | Which nginx front is in use. `lab-http` goes with `LAB_CERT` set to `none`. |
 | `LAB_FHIR_HTTPS` | `true` or `false` | The scheme the FHIR server writes into the links it returns. `false` goes with `LAB_CERT` set to `none`. |
+
+## Resetting the lab
+
+There are five ways to reset, from the lightest to the heaviest. None of them rebuilds an image.
+
+| Command or button | Where | What it resets | What it keeps |
+|---|---|---|---|
+| `step reset` | Editor terminal | The five codelab files, back to the starter | Every other file, and a copy of the replaced files in `~/backups` |
+| `reset-server` | Editor terminal | The three test patients on the FHIR server, back to their first state | Any other resource someone put on the server |
+| **Clear app data** | Top of the App tab | The app's own database in that browser | The code and the server |
+| `./lab-init.sh --reset` | VM terminal | The whole learner volume and the FHIR server. The lab then starts again from the image, which takes two to three minutes. | `.env` with the password, the certificate and the images |
+| `./lab-init.sh --clean` | VM terminal | Everything `--reset` does, plus `.env`, the password and the certificate. The lab stays stopped. | The images and the `letsencrypt` folder |
+
+The lab keeps its state in three places, which are the code, the FHIR server and the browser. To get a lab that looks as if nobody has used it, without restarting anything, reset all three.
+
+```bash
+step reset
+reset-server
+```
+
+Then click **Clear app data** in the App tab. The app rebuilds to `Hello World!` on its own.
+
+Use `./lab-init.sh --reset` when a learner changed files outside the five, or when the leftovers of the lighter route matter. No command on the VM can reach a browser, so click **Clear app data** after it as well.
+
+Use `./lab-init.sh --clean` only before saving the VM as a template, as Step 3 describes. Do not run `./lab-init.sh` again after it, or the template carries a password and a volume.
+
+`./lab-init.sh --info` resets nothing. It prints the addresses and the password again.
 
 ## Updating the codelab version
 
