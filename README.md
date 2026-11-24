@@ -104,6 +104,8 @@ The image build changes three things in the starter code and commits them, so `s
 | Numbered import comments, such as `// 5.2 Imports for the sync task` | `FhirEngineSetup.kt`, `DownloadWorkManagerImpl.kt`, `AppFhirSyncTask.kt` and `PatientListViewModel.kt` | The published starter marks each place for code with a numbered comment but has none for imports |
 | The exception a failed sync throws is printed, as a line that starts with `Sync failed` | `ForegroundSyncLauncher.kt` | The published file swallows it, and the app shows nothing when a sync fails |
 
+The same commit adds one build setting, `kotlin.incremental.wasm=true`, to `codelabs/gradle.properties`. A build after a small edit then rebuilds only what the edit changed, which on a test machine with 16 cores took about 13 seconds where it took about 38 before. Kotlin 2.3.21 marks the setting as experimental. If a build ever leaves a stale app in the App tab, remove that line from the image build in `workspace/Dockerfile` and build the image again.
+
 The editor colours Kotlin but has no code completion, no import prompts and no error underlining. Six things make up for them.
 
 | Stand-in | What it does |

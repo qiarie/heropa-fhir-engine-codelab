@@ -48,6 +48,10 @@ ENV CODELAB_SRC=shared/src/commonMain/kotlin/dev/ohs/fhir/codelab
 #      for imports, because Android Studio adds those.
 #   3. ForegroundSyncLauncher prints the error it catches, so a failed sync
 #      leaves a line in the Output tab.
+#
+# It also turns on incremental Wasm builds in gradle.properties. A build after
+# a small edit then takes about a third of the time. Kotlin marks the switch
+# as experimental, so remove that line if a build ever gives a stale app.
 RUN git init -q -b codelab kotlin-fhir-engine \
  && cd kotlin-fhir-engine \
  && git remote add origin "$CODELAB_REPO" \
@@ -61,6 +65,7 @@ RUN cd "$CODELAB_DIR" \
  && for f in /opt/codelab/solutions/starter/*.kt; do \
       [ "$(basename "$f")" = Main.kt ] || cp "$f" "$CODELAB_SRC/"; \
     done \
+ && printf '\n# Added by the lab. Rebuilds only what an edit changed.\nkotlin.incremental.wasm=true\n' >> gradle.properties \
  && test -n "$(git status --porcelain)" \
  && git -c user.name="Codelab lab" -c user.email="lab@localhost" \
       commit -q -a -m "Adapt the starter for the lab"
