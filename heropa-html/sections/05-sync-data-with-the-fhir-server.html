@@ -1,0 +1,120 @@
+<h2>5. Sync data with the FHIR server</h2>
+<p>In this step, you'll download patients from the FHIR server into the local database, and upload
+local changes back to the server.</p>
+<p>This step changes four files. Each part below names its file, gives its imports first if it needs any, and then its code. Save each file when you finish its part. The app works once all four parts are in.</p>
+<h3>Step 1: Define which resources to download</h3>
+<p>Open <code>DownloadWorkManagerImpl.kt</code> in <code>commonMain</code>. Make the three changes below in order, because each one moves the lines under it down.</p>
+<p>Replace line 22 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Import for the download manager
+import dev.ohs.fhir.model.r4.Bundle
+</code></pre>
+<p>Replace lines 29 and 30, in <code>getNextRequest()</code>, with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Return the next download request
+val url = urls.removeFirstOrNull() ?: return null
+return DownloadRequest.of(url)
+</code></pre>
+<p>Replace lines 37 and 38, in <code>processResponse()</code>, with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Extract the resources from the response
+if (response is Bundle &amp;&amp; response.type.value == Bundle.BundleType.Searchset) {
+  return response.entry.mapNotNull { it.resource }
+}
+return emptyList()
+</code></pre>
+<p>The class now looks like this. Save the file.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class DownloadWorkManagerImpl : DownloadWorkManager {
+  private val urls = ArrayDeque(listOf(&quot;Patient&quot;))
+
+  override suspend fun getNextRequest(): DownloadRequest? {
+    // 5.1 Return the next download request
+    val url = urls.removeFirstOrNull() ?: return null
+    return DownloadRequest.of(url)
+  }
+
+  override suspend fun getSummaryRequestUrls() = mapOf&lt;ResourceType, String&gt;()
+
+  override suspend fun processResponse(response: Resource): Collection&lt;Resource&gt; {
+    // 5.1 Extract the resources from the response
+    if (response is Bundle &amp;&amp; response.type.value == Bundle.BundleType.Searchset) {
+      return response.entry.mapNotNull { it.resource }
+    }
+    return emptyList()
+  }
+}
+</code></pre>
+<p>This class has a queue of URLs to download. It extracts the resources from each returned bundle,
+and the engine saves them in the local database.</p>
+<h3>Step 2: Define how the app syncs</h3>
+<p>Open <code>AppFhirSyncTask.kt</code> in <code>commonMain</code>. Make the two changes below in order.</p>
+<p>Replace line 23 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.2 Imports for the sync task
+import dev.ohs.fhir.engine.FhirEngineProvider
+import dev.ohs.fhir.engine.sync.AcceptLocalConflictResolver
+import dev.ohs.fhir.engine.sync.upload.HttpCreateMethod
+import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod
+</code></pre>
+<p>Replace lines 31 to 39, which are the <code>// 5.2 Replace</code> comment and the four functions under it, with the following code. Keep the closing brace on line 40.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.2 Define the download manager, conflict resolver, FHIR Engine and upload strategy
+override fun getDownloadWorkManager(): DownloadWorkManager = DownloadWorkManagerImpl()
+
+override fun getConflictResolver(): ConflictResolver = AcceptLocalConflictResolver
+
+override fun getFhirEngine(): FhirEngine = FhirEngineProvider.getInstance(platformContext)
+
+override fun getUploadStrategy(): UploadStrategy =
+  UploadStrategy.forBundleRequest(
+    methodForCreate = HttpCreateMethod.PUT,
+    methodForUpdate = HttpUpdateMethod.PATCH,
+    squash = true,
+    bundleSize = 500,
+  )
+</code></pre>
+<p>Save the file.</p>
+<p>Code that ends in <code>TODO()</code> builds without error and only fails when the app runs, so check that none is left. The <strong>Still to do</strong> list in the Build log names any that is.</p>
+<p>Here, we've defined which download manager, conflict resolver, and FHIR Engine instance to use for
+syncing. All platforms use this class.</p>
+<p>Shared code starts a sync through the <code>SyncLauncher</code> interface. Each platform has its own
+implementation, which is already in the starter:</p>
+<ul>
+<li><strong>Desktop, Web, and iOS:</strong> <code>ForegroundSyncLauncher</code> runs <code>AppFhirSyncTask</code> with <code>runSync</code> in the
+app's coroutine. The sync stops if the app closes.</li>
+</ul>
+<p>The lab runs the web app, so this is the launcher your app uses. A sync runs only while the App tab is open. The lab has added one line to <code>ForegroundSyncLauncher.kt</code>, which prints the reason when a sync fails so that you can read it in the Output tab.</p>
+<p>On Android a different launcher keeps the sync running in the background. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> describes it.</p>
+<h3>Step 3: Start the sync</h3>
+<p>Open <code>PatientListViewModel.kt</code>. Find the
+<code>// 5.3 Replace with code from the codelab to start the sync.</code> comment in <code>triggerOneTimeSync()</code>
+and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.3 Start the sync
+scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
+</code></pre>
+<p>The file is in the same folder as the others. The comment is on line 67, and you can press Ctrl+F and type <code>// 5.3</code> to jump to it. Replace that one line with the two lines above. This part needs no new import. Save the file.</p>
+<p>This coroutine starts a one-time sync with the FHIR server, and forwards the state of the sync to
+the UI.</p>
+<h3>Step 4: Show when the sync finishes</h3>
+<p>Open <code>PatientListScreen.kt</code>. Find the
+<code>// 5.4 Replace with code from the codelab to show a message when the sync completes.</code> comment in
+<code>handleSyncJobStatus</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.4 Show a message when the sync completes
+when (syncJobStatus) {
+  is CurrentSyncJobStatus.Succeeded -&gt; {
+    viewModel.refreshPatients()
+    snackbarHostState.showSnackbar(&quot;Sync Finished&quot;)
+  }
+  else -&gt; {}
+}
+</code></pre>
+<p>The file is in the same folder as the others. The comment is on line 95, and you can press Ctrl+F and type <code>// 5.4</code> to jump to it. Replace that one line with the block above. This part needs no new import. Save the file.</p>
+<p>Here, when the sync finishes, the app reloads all patients from the local database with
+<code>refreshPatients()</code>, which is already in the starter, and shows a message to the user.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App tab and click <strong>Sync</strong>.</p>
+<p>Now that everything is set up, run your app and tap <strong>Sync</strong>. If everything works correctly, you
+should see the patients from your local FHIR server being downloaded and displayed in the app.</p>
+<p>The list shows the three test patients, and the words <strong>Sync Finished</strong> appear at the bottom for a few seconds. The Output tab in the Editor shows the requests the app sent to the FHIR server and the answers it got.</p>
+<p>If nothing appears in the app after a few seconds, the sync failed. The app shows nothing in that case, so look in two places.</p>
+<ul>
+<li>The <strong>Output</strong> tab in the Editor. A red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code> gives the reason. <code>NotImplementedError</code> means a <code>TODO()</code> is still in <code>AppFhirSyncTask.kt</code>. After fixing the code, wait for the app to reload before you click <strong>Sync</strong> again.</li>
+<li>The <strong>Still to do</strong> list in the Build log. Every <code>// 5</code> comment and every <code>TODO()</code> must be gone.</li>
+</ul>
+<p>If you would rather jump to the finished code, type <code>step 5</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the patient list after a sync, on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image8.png" alt="The patient list after a sync on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>

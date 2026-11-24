@@ -1,0 +1,28 @@
+<h2>8. Congratulations!</h2>
+<p style="border-left: 4px solid #2e7d32; background: #e8f5e9; padding: 8px 12px;">You have used the Kotlin FHIR Engine to manage FHIR resources in your app:</p>
+<ul>
+<li>Use the Sync API to sync FHIR resources with a FHIR server</li>
+<li>Use the Data Access API to create, read, update, and delete local FHIR resources</li>
+<li>Use the Search API to search local FHIR resources</li>
+</ul>
+<h3>What we've covered</h3>
+<ul>
+<li>How to run a local HAPI FHIR server with test data</li>
+<li>How to add the Kotlin FHIR Engine to your Kotlin Multiplatform app</li>
+<li>How to use the Sync API, Data Access API, and Search API of the Kotlin FHIR Engine</li>
+</ul>
+<h3>Next steps</h3>
+<ul>
+<li>Run the codelab on the other platforms: Desktop, Web and iOS</li>
+<li>Download other resource types by adding them to the <code>urls</code> queue in <code>DownloadWorkManagerImpl</code></li>
+<li>Add periodic sync. See <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/tree/main/engine-app"><code>engine-app</code></a>
+for an example on every platform.</li>
+<li>Explore the Search API. The <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/blob/main/docs/conformance.md">conformance</a>
+document lists the supported search parameter types, modifiers and prefixes.</li>
+</ul>
+<p>The other platforms need tools the lab does not have. To try them, follow the <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> on your own computer. Here are some things you can try on the lab.</p>
+<ul>
+<li>In step 7, change <code>StringFilterModifier.CONTAINS</code> to <code>StringFilterModifier.STARTS_WITH</code>, save, and search for <code>by</code></li>
+<li>In <code>PatientListViewModel.kt</code>, change <code>Order.ASCENDING</code> to <code>Order.DESCENDING</code> in <code>refreshPatients()</code>, save, and click <strong>Sync</strong></li>
+<li>Click <strong>Update</strong>, then read the Output tab to see the request the app sent to the server for the two changed patients</li>
+</ul>

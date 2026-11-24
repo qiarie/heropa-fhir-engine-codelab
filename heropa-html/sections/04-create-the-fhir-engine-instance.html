@@ -1,0 +1,74 @@
+<h2>4. Create the FHIR Engine instance</h2>
+<p>In this step, you'll initialize the FHIR Engine with the address of your local FHIR server.</p>
+<p>Start with the five imports this step needs. The web editor does not add imports for you, so you paste them in yourself, before any other code.</p>
+<ol>
+<li>
+<p>Go to <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt</code>. It is the file that is open in the Code area.</p>
+</li>
+<li>
+<p>Find the <code>// 4 Imports for the FHIR Engine</code> comment. It is on line 18, just under the line that starts with <code>package</code>.</p>
+</li>
+<li>
+<p>Replace that comment with the following code. The first line puts the comment back, so the imports end up right under it.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 4 Imports for the FHIR Engine
+import dev.ohs.fhir.engine.DatabaseErrorStrategy
+import dev.ohs.fhir.engine.FhirEngineConfiguration
+import dev.ohs.fhir.engine.FhirEngineProvider
+import dev.ohs.fhir.engine.ServerConfiguration
+import dev.ohs.fhir.engine.sync.remote.HttpLogger
+</code></pre>
+</li>
+</ol>
+<p>The <code>// 4 Imports</code> comment is not in the published codelab. The lab adds it to the starter code to mark the place.</p>
+<ol>
+<li>
+<p>Open <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt</code>. Find the
+<code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> comment in
+<code>initFhirEngine</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 4 Initialize the FHIR Engine
+FhirEngineProvider.init(
+  FhirEngineConfiguration(
+    databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
+    serverConfiguration =
+      ServerConfiguration(
+        baseUrl = baseUrl,
+        httpLogger =
+          HttpLogger(if (debug) HttpLogger.Level.BODY else HttpLogger.Level.BASIC),
+      ),
+    storageDirectory = storageDirectory,
+  ),
+  platformContext,
+)
+</code></pre>
+<p>Notes:</p>
+<ul>
+<li><code>platformContext</code>: the application <code>Context</code> on Android, <code>Unit</code> on other platforms.</li>
+<li><code>baseUrl</code>: the FHIR server's base URL.</li>
+<li><code>httpLogger</code>: logs the requests to the server. The logs show up in Logcat on Android, the
+Xcode console on iOS, the terminal on Desktop and the browser console on Web.</li>
+<li><code>storageDirectory</code>: where the database is stored. Used on desktop and web only.</li>
+<li><code>RECREATE_AT_OPEN</code>: if the database fails to open, the engine deletes it and makes a new one.</li>
+<li><code>enableEncryption = true</code> encrypts the database with SQLCipher. It is supported on Android
+only.</li>
+</ul>
+<p>The comment is on line 35 now that the imports are in, on the last line before the closing brace of the file. Press Ctrl+F and type <code>// 4 Replace</code> to jump to it. Select that one line, delete it and paste the block above where it was. The new block starts with its own numbered comment, <code>// 4 Initialize the FHIR Engine</code>.</p>
+<p>On the lab you do not need the browser console. The lab copies what the app logs there into the <strong>Output</strong> tab of the Editor.</p>
+</li>
+<li>
+<p>Each platform calls <code>initFhirEngine</code> once at startup. The starter already has these calls.</p>
+<p>On the lab the web entry point makes the call, in <code>shared/src/wasmJsMain/kotlin/dev/ohs/fhir/codelab/Main.kt</code>. You do not change it. The lab has changed one line of that file so the app finds the FHIR server at your lab address followed by <code>/fhir/</code>. The published file says <code>http://localhost:8080/fhir/</code>, which from your browser would mean your own computer.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">initFhirEngine(Unit, baseUrl = &quot;${pageOrigin()}/fhir/&quot;, debug = true)
+</code></pre>
+</li>
+<li>
+<p>Get the engine anywhere with <code>FhirEngineProvider.getInstance(platformContext)</code>.</p>
+</li>
+</ol>
+<p>Now run it. Save <code>FhirEngineSetup.kt</code> with Ctrl+S, wait for <code>BUILD OK</code> in the Build log, then look at the App tab.</p>
+<p>Now that the engine is initialized, run the app again. Instead of the <code>Hello World!</code> screen, you
+should see the patient list. The list stays empty until you sync with the server in the next
+step.</p>
+<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons and a <strong>Search by name</strong> field. The buttons do nothing yet.</p>
+<p>If the Build log prints <code>BUILD FAILED</code>, read the <strong>What to do</strong> list under the errors, or click <strong>Fix imports</strong> at the bottom of the Editor. If you would rather jump to the finished code, type <code>step 4</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the empty patient list on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>

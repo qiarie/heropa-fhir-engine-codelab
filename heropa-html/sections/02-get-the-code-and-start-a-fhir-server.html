@@ -1,0 +1,272 @@
+<h2>2. Get the code and start a FHIR server</h2>
+<h3>Start your lab</h3>
+<ol>
+<li>
+<p>Open the terminal of your lab VM in Heropa.</p>
+</li>
+<li>
+<p>Start the lab.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+./lab-init.sh
+</code></pre>
+</li>
+<li>
+<p>Wait two to three minutes. Most of that is the FHIR server starting. The command ends with a summary like the example below. The addresses and the password in the example are placeholders and do not work. Use the ones your own terminal prints.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">------------------------------------------------------------------------
+The lab is ready. Open these in the browser on your own computer.
+
+  Editor            https://203-0-113-10.sslip.io/ide/
+  Editor password   4827
+  App               https://203-0-113-10.sslip.io/preview/
+  FHIR server       https://203-0-113-10.sslip.io/fhir/Patient
+
+  Scan a code with a phone or tablet camera to open that address there.
+
+  Editor                               App
+  [QR code]                            [QR code]
+
+First steps
+  1. Open the Editor address and enter the password.
+  2. Click Open app at the very bottom of the Editor. The app opens in a
+     second tab.
+
+Lost these details? Run ./lab-init.sh --info to print them again.
+The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
+------------------------------------------------------------------------
+</code></pre>
+</li>
+</ol>
+<p style="border-left: 4px solid #e0a800; background: #fff8e1; padding: 8px 12px;"><strong>The addresses and password in this manual are examples only.</strong> Wherever you see <code>203-0-113-10.sslip.io</code>, <code>203.0.113.10</code> or the password <code>4827</code>, use the values from your own summary instead. Your addresses and password are your own. You can get them back at any time, and the section <em>Find your addresses again</em> below explains how.</p>
+<p>Where the example shows <code>[QR code]</code>, your terminal draws two real QR codes, one for the Editor and one for the App. Scan a code with the camera of a phone or tablet to open that address there without typing it. The Editor still asks for the password. The start page of your lab, which is the address with nothing after the name, shows the App code as well. Do the codelab itself on a computer, because the Editor needs a keyboard and a wide screen. The App on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App on your computer. If the codes look like broken characters in your terminal, ignore them and type the addresses.</p>
+<p>The part of each address before <code>/ide/</code> is your lab address. In the example it is <code>https://203-0-113-10.sslip.io</code>. This guide says &quot;your lab address&quot; wherever the published codelab says <code>http://localhost:8080</code>.</p>
+<h3>Open the editor and the app</h3>
+<p>You work in two browser tabs, one for the Editor and one for the App. Open both in the same browser, because the app's output travels between them through that browser.</p>
+<ol>
+<li>Open the <strong>Editor</strong> address in a new tab. Type the editor password, which is a code of four digits, and press <strong>Submit</strong>. If the summary shows <code>none needed</code> instead of a password, the Editor opens without asking.</li>
+<li>In the bar at the very bottom of the Editor, click <strong>Open app</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App</strong> address yourself.</li>
+</ol>
+<p>If you have room, put the two tabs side by side in separate windows.</p>
+<p>The Editor tab has six areas. The last three share the space under the code, and you switch between them by clicking their tabs.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Area</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Where</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Explorer</td>
+<td style="border: 1px solid #333; padding: 8px;">Far left</td>
+<td style="border: 1px solid #333; padding: 8px;">The project files</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Code</td>
+<td style="border: 1px solid #333; padding: 8px;">Top centre</td>
+<td style="border: 1px solid #333; padding: 8px;">The file you are changing</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre</td>
+<td style="border: 1px solid #333; padding: 8px;">Shows each build, whether it worked and which steps are still to do</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre, the tab next to Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Shows what the app prints. From step 4 on that is every request the app sends to the FHIR server, and the reason when a sync fails.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Terminal</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre, the tab next to Output</td>
+<td style="border: 1px solid #333; padding: 8px;">For typing commands</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Guide</td>
+<td style="border: 1px solid #333; padding: 8px;">Right</td>
+<td style="border: 1px solid #333; padding: 8px;">This guide</td>
+</tr>
+</tbody>
+</table>
+<p>You can drag the borders between the areas to resize them. The bar at the very bottom has six buttons.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Button</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Opens the App tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Build now</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Saves every open file and builds the app straight away. You rarely need it, because saving a file starts a build automatically.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Guide</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Guide back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Build log</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Build log back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Output</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Output tab back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Adds the import lines your code needs. A later part explains imports.</td>
+</tr>
+</tbody>
+</table>
+<p>The App tab has a bar along the top and a strip along the bottom.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Control</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Status dot</td>
+<td style="border: 1px solid #333; padding: 8px;">Green when the app matches your code, amber while a build runs, red when the last build failed</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Auto refresh</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">When ticked, the app reloads automatically after every successful build</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Refresh</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Reloads the app now</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser, then reloads the app. The patients on the FHIR server are not touched.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Output</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The strip along the bottom, which shows whatever the app prints. The Output tab in the Editor shows the same thing.</td>
+</tr>
+</tbody>
+</table>
+<h3>Find your addresses again</h3>
+<p>Come here when you return to the lab after a break, when the Editor or App tab stops loading, or when you have lost the addresses or the password.</p>
+<p>The lab VM stops when you close the course, when you stop it yourself, and when it sits idle for a while. Your code stays on it. The VM is set up to keep the same IP address, so the same addresses normally work again once it is running.</p>
+<ol>
+<li>
+<p>Open the course in Heropa and start the VM if it is stopped. Give it two to three minutes, because the FHIR server takes that long to start.</p>
+</li>
+<li>
+<p>Reload the Editor and App tabs. If they load, you are done.</p>
+</li>
+<li>
+<p>If they do not load, or you no longer have the addresses, open the terminal of the VM and run the same two commands as before.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+./lab-init.sh
+</code></pre>
+</li>
+<li>
+<p>Read the summary it prints. The lines under <strong>Since the last run</strong> tell you what to do.</p>
+</li>
+</ol>
+<p>When the address is the same, the summary says so. Reload your tabs, or open the addresses again.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
+  Address    The same as before. Tabs you still have open work again after
+             a reload.
+  Password   The same as before.
+  Your code  Kept as you left it.
+</code></pre>
+<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app</strong>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
+  Address    CHANGED. It was https://203-0-113-10.sslip.io
+             Close the old Editor and App tabs. They no longer work. Open
+             the two addresses above.
+  Password   The same as before.
+  Your code  Kept as you left it.
+</code></pre>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">After the VM restarts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Editor and App addresses</td>
+<td style="border: 1px solid #333; padding: 8px;">Normally the same. The summary says <code>CHANGED</code> when they are not.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Editor password</td>
+<td style="border: 1px solid #333; padding: 8px;">Always the same</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Your code</td>
+<td style="border: 1px solid #333; padding: 8px;">Always kept as you left it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">FHIR server address</td>
+<td style="border: 1px solid #333; padding: 8px;">Changes together with the other two, since it is the same address followed by <code>/fhir/</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App tab, so the app and the server agree again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log and Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Start empty, and fill again at the next build and the next <strong>Sync</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The command is safe to run at any time and as often as you like. It changes nothing when the address is the same. It always waits for the FHIR server to answer, which takes up to two minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
+<p>Always copy the addresses from the summary. They are made from the IP address of the VM, normally with dashes instead of dots and <code>.sslip.io</code> at the end, so an example IP of <code>203.0.113.10</code> would give <code>https://203-0-113-10.sslip.io/ide/</code>. Sometimes the summary shows the plain IP, such as <code>https://203.0.113.10/ide/</code>, with a note that says why. Those addresses work in exactly the same way.</p>
+<h3>If the lab starts in reduced mode</h3>
+<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the summary from <code>./lab-init.sh</code> opens with the words <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
+<p>Your code, the build and the app all work in reduced mode. Two things are different.</p>
+<ol>
+<li>Your browser shows a warning page the first time you open the Editor address. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. You do this once. The warning appears because the lab made its own certificate, and it is expected here.</li>
+<li>The Editor has no Guide, Build log or Output area, because browsers block them on a certificate they do not trust. A notice in the Editor says so. Use these in their place.</li>
+</ol>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In full mode</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In reduced mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Guide area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">This manual in Heropa. The <strong>Guide</strong> button also opens it in the Editor as plain text.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Build log</strong> address that <code>./lab-init.sh</code> prints, in a separate browser tab. The <strong>Build log</strong> button opens it.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App tab</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else in this manual applies as written. Where a step says to look at the Build log or the Output tab, look at the page from the table.</p>
+<p>To get back to full mode, run <code>./lab-init.sh</code> again later. When it was refused for being over a limit, the summary gives the time to try again under <strong>To get full mode</strong>. That run asks for a certificate again and puts the lab back in full mode when it gets one. The addresses may change when that happens, so open the ones it prints.</p>
+<h3>Download the code</h3>
+<p>There is nothing to download on the lab. The code is already there, and the Editor opens on the <code>codelabs</code> folder. The Explorer on the left shows what is inside it.</p>
+<h3>Start a local FHIR server with test data</h3>
+<p><a href="https://hapifhir.io/hapi-fhir/">HAPI FHIR</a> is a popular open source FHIR server. We use a local
+HAPI FHIR server in our codelab for the app to connect to.</p>
+<p>On the lab the server is already running, and three test patients are already loaded into it. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
+<p>To verify that the test data is available on the server, open the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed, which is your lab address followed by <code>/fhir/Patient</code>, in a new browser tab. You should see a FHIR Bundle as the search result with a <code>total</code> count of 3.</p>
+<p>If the page says the FHIR server is still starting, wait a minute and reload it.</p>
+<p>The picture below shows that page on a local server.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>The test patients are in <code>data/patients.json</code>, which you can open from the Explorer. To put the server back to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">reset-server
+</code></pre>
+<p>The server has no password. It holds only these made up patients, so do not put real data on it.</p>

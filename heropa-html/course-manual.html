@@ -1,0 +1,1081 @@
+<h1>Manage FHIR resources using the Kotlin FHIR Engine</h1>
+<p>This guide takes you through the codelab on the Heropa lab, where you write the code in an editor in your browser and the app runs as a web page. A FHIR server for the app to talk to is already running in your lab. You install nothing.</p>
+<p>It is built on the <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a>, which was written for Android Studio on your own computer. This guide covers the lab only. If you would rather work in Android Studio, follow the <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> instead of this guide.</p>
+<p>The codelab text comes from the <a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a> project under <code>codelabs</code> directory and is used under the Apache License 2.0.</p>
+<h2>1. Before you begin</h2>
+<h3>What you'll build</h3>
+<p>In this codelab, you're going to build a Kotlin Multiplatform app with the Kotlin FHIR Engine. Your
+app will use the engine to download FHIR resources from a FHIR server, and upload any local changes
+to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).</p>
+<h3>What you'll learn</h3>
+<ul>
+<li>How to run a local HAPI FHIR server with Docker</li>
+<li>How to integrate the Kotlin FHIR Engine into your Kotlin Multiplatform application</li>
+<li>How to use the Sync API to download and upload FHIR resources</li>
+<li>How to use the Search API</li>
+<li>How to use the Data Access APIs to create, read, update, and delete FHIR resources locally</li>
+</ul>
+<p>On the lab the HAPI FHIR server is started for you, so you skip the first of these. The block in part 2 shows how the published codelab does it.</p>
+<h3>What you'll need</h3>
+<p>On the lab you need only a recent version of Chrome, Edge, Firefox or Safari, in an ordinary window. The app keeps its data in the browser, which private or incognito windows may not allow.</p>
+<p>You do not need to know Kotlin. Every change is given in full, and this guide says exactly which file to open and where to put each line.</p>
+<p>This codelab is focused on the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>. Non-relevant concepts
+and code blocks are glossed over and are provided for you to simply copy and paste. If you haven't
+built a Kotlin Multiplatform app before, you can start by
+<a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-create-first-app.html">creating your first Compose Multiplatform app</a>.</p>
+<h2>2. Get the code and start a FHIR server</h2>
+<h3>Start your lab</h3>
+<ol>
+<li>
+<p>Open the terminal of your lab VM in Heropa.</p>
+</li>
+<li>
+<p>Start the lab.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+./lab-init.sh
+</code></pre>
+</li>
+<li>
+<p>Wait two to three minutes. Most of that is the FHIR server starting. The command ends with a summary like the example below. The addresses and the password in the example are placeholders and do not work. Use the ones your own terminal prints.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">------------------------------------------------------------------------
+The lab is ready. Open these in the browser on your own computer.
+
+  Editor            https://203-0-113-10.sslip.io/ide/
+  Editor password   4827
+  App               https://203-0-113-10.sslip.io/preview/
+  FHIR server       https://203-0-113-10.sslip.io/fhir/Patient
+
+  Scan a code with a phone or tablet camera to open that address there.
+
+  Editor                               App
+  [QR code]                            [QR code]
+
+First steps
+  1. Open the Editor address and enter the password.
+  2. Click Open app at the very bottom of the Editor. The app opens in a
+     second tab.
+
+Lost these details? Run ./lab-init.sh --info to print them again.
+The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
+------------------------------------------------------------------------
+</code></pre>
+</li>
+</ol>
+<p style="border-left: 4px solid #e0a800; background: #fff8e1; padding: 8px 12px;"><strong>The addresses and password in this manual are examples only.</strong> Wherever you see <code>203-0-113-10.sslip.io</code>, <code>203.0.113.10</code> or the password <code>4827</code>, use the values from your own summary instead. Your addresses and password are your own. You can get them back at any time, and the section <em>Find your addresses again</em> below explains how.</p>
+<p>Where the example shows <code>[QR code]</code>, your terminal draws two real QR codes, one for the Editor and one for the App. Scan a code with the camera of a phone or tablet to open that address there without typing it. The Editor still asks for the password. The start page of your lab, which is the address with nothing after the name, shows the App code as well. Do the codelab itself on a computer, because the Editor needs a keyboard and a wide screen. The App on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App on your computer. If the codes look like broken characters in your terminal, ignore them and type the addresses.</p>
+<p>The part of each address before <code>/ide/</code> is your lab address. In the example it is <code>https://203-0-113-10.sslip.io</code>. This guide says &quot;your lab address&quot; wherever the published codelab says <code>http://localhost:8080</code>.</p>
+<h3>Open the editor and the app</h3>
+<p>You work in two browser tabs, one for the Editor and one for the App. Open both in the same browser, because the app's output travels between them through that browser.</p>
+<ol>
+<li>Open the <strong>Editor</strong> address in a new tab. Type the editor password, which is a code of four digits, and press <strong>Submit</strong>. If the summary shows <code>none needed</code> instead of a password, the Editor opens without asking.</li>
+<li>In the bar at the very bottom of the Editor, click <strong>Open app</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App</strong> address yourself.</li>
+</ol>
+<p>If you have room, put the two tabs side by side in separate windows.</p>
+<p>The Editor tab has six areas. The last three share the space under the code, and you switch between them by clicking their tabs.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Area</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Where</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Explorer</td>
+<td style="border: 1px solid #333; padding: 8px;">Far left</td>
+<td style="border: 1px solid #333; padding: 8px;">The project files</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Code</td>
+<td style="border: 1px solid #333; padding: 8px;">Top centre</td>
+<td style="border: 1px solid #333; padding: 8px;">The file you are changing</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre</td>
+<td style="border: 1px solid #333; padding: 8px;">Shows each build, whether it worked and which steps are still to do</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre, the tab next to Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Shows what the app prints. From step 4 on that is every request the app sends to the FHIR server, and the reason when a sync fails.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Terminal</td>
+<td style="border: 1px solid #333; padding: 8px;">Bottom centre, the tab next to Output</td>
+<td style="border: 1px solid #333; padding: 8px;">For typing commands</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Guide</td>
+<td style="border: 1px solid #333; padding: 8px;">Right</td>
+<td style="border: 1px solid #333; padding: 8px;">This guide</td>
+</tr>
+</tbody>
+</table>
+<p>You can drag the borders between the areas to resize them. The bar at the very bottom has six buttons.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Button</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Opens the App tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Build now</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Saves every open file and builds the app straight away. You rarely need it, because saving a file starts a build automatically.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Guide</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Guide back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Build log</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Build log back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Output</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Brings the Output tab back if you closed it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Adds the import lines your code needs. A later part explains imports.</td>
+</tr>
+</tbody>
+</table>
+<p>The App tab has a bar along the top and a strip along the bottom.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Control</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Status dot</td>
+<td style="border: 1px solid #333; padding: 8px;">Green when the app matches your code, amber while a build runs, red when the last build failed</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Auto refresh</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">When ticked, the app reloads automatically after every successful build</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Refresh</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Reloads the app now</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser, then reloads the app. The patients on the FHIR server are not touched.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Output</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The strip along the bottom, which shows whatever the app prints. The Output tab in the Editor shows the same thing.</td>
+</tr>
+</tbody>
+</table>
+<h3>Find your addresses again</h3>
+<p>Come here when you return to the lab after a break, when the Editor or App tab stops loading, or when you have lost the addresses or the password.</p>
+<p>The lab VM stops when you close the course, when you stop it yourself, and when it sits idle for a while. Your code stays on it. The VM is set up to keep the same IP address, so the same addresses normally work again once it is running.</p>
+<ol>
+<li>
+<p>Open the course in Heropa and start the VM if it is stopped. Give it two to three minutes, because the FHIR server takes that long to start.</p>
+</li>
+<li>
+<p>Reload the Editor and App tabs. If they load, you are done.</p>
+</li>
+<li>
+<p>If they do not load, or you no longer have the addresses, open the terminal of the VM and run the same two commands as before.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+./lab-init.sh
+</code></pre>
+</li>
+<li>
+<p>Read the summary it prints. The lines under <strong>Since the last run</strong> tell you what to do.</p>
+</li>
+</ol>
+<p>When the address is the same, the summary says so. Reload your tabs, or open the addresses again.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
+  Address    The same as before. Tabs you still have open work again after
+             a reload.
+  Password   The same as before.
+  Your code  Kept as you left it.
+</code></pre>
+<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app</strong>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
+  Address    CHANGED. It was https://203-0-113-10.sslip.io
+             Close the old Editor and App tabs. They no longer work. Open
+             the two addresses above.
+  Password   The same as before.
+  Your code  Kept as you left it.
+</code></pre>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">After the VM restarts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Editor and App addresses</td>
+<td style="border: 1px solid #333; padding: 8px;">Normally the same. The summary says <code>CHANGED</code> when they are not.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Editor password</td>
+<td style="border: 1px solid #333; padding: 8px;">Always the same</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Your code</td>
+<td style="border: 1px solid #333; padding: 8px;">Always kept as you left it</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">FHIR server address</td>
+<td style="border: 1px solid #333; padding: 8px;">Changes together with the other two, since it is the same address followed by <code>/fhir/</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App tab, so the app and the server agree again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log and Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Start empty, and fill again at the next build and the next <strong>Sync</strong></td>
+</tr>
+</tbody>
+</table>
+<p>The command is safe to run at any time and as often as you like. It changes nothing when the address is the same. It always waits for the FHIR server to answer, which takes up to two minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
+<p>Always copy the addresses from the summary. They are made from the IP address of the VM, normally with dashes instead of dots and <code>.sslip.io</code> at the end, so an example IP of <code>203.0.113.10</code> would give <code>https://203-0-113-10.sslip.io/ide/</code>. Sometimes the summary shows the plain IP, such as <code>https://203.0.113.10/ide/</code>, with a note that says why. Those addresses work in exactly the same way.</p>
+<h3>If the lab starts in reduced mode</h3>
+<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the summary from <code>./lab-init.sh</code> opens with the words <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
+<p>Your code, the build and the app all work in reduced mode. Two things are different.</p>
+<ol>
+<li>Your browser shows a warning page the first time you open the Editor address. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. You do this once. The warning appears because the lab made its own certificate, and it is expected here.</li>
+<li>The Editor has no Guide, Build log or Output area, because browsers block them on a certificate they do not trust. A notice in the Editor says so. Use these in their place.</li>
+</ol>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In full mode</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In reduced mode</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Guide area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">This manual in Heropa. The <strong>Guide</strong> button also opens it in the Editor as plain text.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Build log area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Build log</strong> address that <code>./lab-init.sh</code> prints, in a separate browser tab. The <strong>Build log</strong> button opens it.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output area in the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App tab</td>
+</tr>
+</tbody>
+</table>
+<p>Everything else in this manual applies as written. Where a step says to look at the Build log or the Output tab, look at the page from the table.</p>
+<p>To get back to full mode, run <code>./lab-init.sh</code> again later. When it was refused for being over a limit, the summary gives the time to try again under <strong>To get full mode</strong>. That run asks for a certificate again and puts the lab back in full mode when it gets one. The addresses may change when that happens, so open the ones it prints.</p>
+<h3>Download the code</h3>
+<p>There is nothing to download on the lab. The code is already there, and the Editor opens on the <code>codelabs</code> folder. The Explorer on the left shows what is inside it.</p>
+<h3>Start a local FHIR server with test data</h3>
+<p><a href="https://hapifhir.io/hapi-fhir/">HAPI FHIR</a> is a popular open source FHIR server. We use a local
+HAPI FHIR server in our codelab for the app to connect to.</p>
+<p>On the lab the server is already running, and three test patients are already loaded into it. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
+<p>To verify that the test data is available on the server, open the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed, which is your lab address followed by <code>/fhir/Patient</code>, in a new browser tab. You should see a FHIR Bundle as the search result with a <code>total</code> count of 3.</p>
+<p>If the page says the FHIR server is still starting, wait a minute and reload it.</p>
+<p>The picture below shows that page on a local server.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>The test patients are in <code>data/patients.json</code>, which you can open from the Explorer. To put the server back to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">reset-server
+</code></pre>
+<p>The server has no password. It holds only these made up patients, so do not put real data on it.</p>
+<h2>3. Set up the project</h2>
+<h3>Project structure</h3>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Module</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>shared</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Kotlin Multiplatform module. <code>commonMain</code> holds the engine setup, sync, view model and UI. The other source sets hold each platform's entry point and sync.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>androidApp</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Android application. <code>FhirApplication</code> initializes the engine and <code>MainActivity</code> shows <code>App()</code>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>iosApp</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/iosMain</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The platform entry points are already written for you. Everything you'll write in this codelab goes
+into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
+<ul>
+<li><code>FhirEngineSetup.kt</code></li>
+<li><code>DownloadWorkManagerImpl.kt</code></li>
+<li><code>AppFhirSyncTask.kt</code></li>
+<li><code>PatientListViewModel.kt</code></li>
+<li><code>PatientListScreen.kt</code></li>
+</ul>
+<p>Each place you'll change is marked with a numbered comment, such as
+<code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> The number tells you which
+step of the codelab adds the code.</p>
+<p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
+<h4>To open one of the five files</h4>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then <code>commonMain</code>, then the folder shown as <code>kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
+<h3>Import the app into Android Studio</h3>
+<p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
+<h3>The Kotlin FHIR Engine dependency</h3>
+<p>For your convenience, the Kotlin FHIR Engine dependencies have already been added to the
+<code>commonMain</code> source set of <code>shared/build.gradle.kts</code>:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">kotlin {
+  sourceSets {
+    commonMain.dependencies {
+      api(&quot;dev.ohs.fhir:fhir-engine:2.0.0-alpha05&quot;)
+      api(&quot;dev.ohs.fhir:fhir-model-r4:1.0.0-rc03&quot;)
+      // ...
+    }
+  }
+}
+</code></pre>
+<p>Because the dependencies are in <code>commonMain</code>, Gradle picks the right artifact for each target
+platform.</p>
+<p>The FHIR model is <a href="https://github.com/ohs-foundation/kotlin-fhir">Kotlin FHIR</a>, not HAPI. Kotlin
+FHIR resources are immutable. To change a resource, make a copy with <code>copy(...)</code>.</p>
+<p>You change nothing in this part. It only shows what is already in the project.</p>
+<h3>Sync your project with Gradle files</h3>
+<p>There is nothing to do on the lab. Every build the lab runs reads the Gradle files again.</p>
+<h3>Run the starter app</h3>
+<p>The starter app is already running on the lab as a web page. Look at the App tab.</p>
+<p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
+see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
+<p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h3>Run the app on other platforms</h3>
+<p>The lab runs the Web (Wasm) version of the app. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
+<p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
+<h3>How to run the app</h3>
+<p>You do the same four things for every step of the codelab.</p>
+<ol>
+<li>Change a file in the Code area.</li>
+<li>Save it with Ctrl+S, or Cmd+S on a Mac. Saving starts a build.</li>
+<li>Watch the Build log under the code. It prints <code>Building the app</code> and then, after up to a minute, <code>BUILD OK</code>.</li>
+<li>Switch to the App tab. It has reloaded automatically and shows the new version.</li>
+</ol>
+<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
+<p>If you save again while a build is running, the lab finishes that build and then runs one more, so your latest change is never missed.</p>
+<h3>Start a build yourself</h3>
+<p>You rarely need to, but you can start a build without changing a file. Do this when you are not sure a build ran, when the Build log shows nothing new after a save, or when you want to see the result of the last build again.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Way</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Button</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Build now</strong> in the bar at the very bottom of the Editor. It saves every open file first, then builds.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Command</td>
+<td style="border: 1px solid #333; padding: 8px;">Click the <strong>Terminal</strong> tab, type <code>build</code> and press Enter. This builds the files as they were last saved.</td>
+</tr>
+</tbody>
+</table>
+<p>Either way, the build appears in the Build log like any other, and ends with <code>BUILD OK</code> or <code>BUILD FAILED</code>. When nothing changed since the last build, it finishes in a few seconds.</p>
+<p>After each successful build, the Build log also prints a <strong>Still to do</strong> list of the numbered comments that are still in the code. It gets shorter as you go and is a quick way to see where you are.</p>
+<p>Some steps change more than one file. Save each file as you finish it. A build in between may fail because the other files are not done yet, and that is fine. The build after your last save is the one that counts.</p>
+<h3>When a build fails</h3>
+<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App tab keeps showing the last version that worked.</p>
+<h3>If you have used Android Studio</h3>
+<p>This table shows what takes the place of each thing you know.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In Android Studio</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">On the lab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Open Android Studio</td>
+<td style="border: 1px solid #333; padding: 8px;">Use the Editor tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Run</strong> in the Android Studio toolbar</td>
+<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App tab. <strong>Build now</strong> does the same without a change.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Select <strong>Sync Project with Gradle Files</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing. Every build reads the Gradle files.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Read Logcat</td>
+<td style="border: 1px solid #333; padding: 8px;">Read the <strong>Output</strong> tab in the Editor, next to the Build log</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong> or <strong>Update</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> or <strong>Update</strong></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>http://localhost:8080/fhir/</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Your lab address followed by <code>/fhir/</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>docker compose down</code> and <code>docker compose up -d</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Type <code>reset-server</code> in the <strong>Terminal</strong> tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Android Studio prompts you to add the necessary imports</td>
+<td style="border: 1px solid #333; padding: 8px;">Paste the import lines yourself, under the numbered comment the step names</td>
+</tr>
+</tbody>
+</table>
+<h3>What this editor does not do for you</h3>
+<p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Android Studio does this</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">On the lab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Offers to add an import when you paste code</td>
+<td style="border: 1px solid #333; padding: 8px;">You add each import line yourself</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Picks between two types with the same name</td>
+<td style="border: 1px solid #333; padding: 8px;">You must use the exact import line from the step</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Underlines mistakes in red as you type</td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing is underlined. Mistakes show in the Build log after you save.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Completes names as you type</td>
+<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Tidies indentation and removes unused imports</td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing is tidied. Indentation does not affect the build, and an unused import is harmless.</td>
+</tr>
+</tbody>
+</table>
+<h4>What an import is</h4>
+<p>Code refers to things by short names, such as <code>FhirEngineProvider</code>. An import line says which library a short name comes from. If the import is missing, the build fails with <code>Unresolved reference</code>.</p>
+<h4>Where import lines go</h4>
+<p>All import lines of a file sit together near its top, each starting with the word <code>import</code>. Right under them, in each file that needs new imports, the lab has put a numbered comment. This is the top of <code>AppFhirSyncTask.kt</code>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">import dev.ohs.fhir.engine.sync.FhirSyncTask
+import dev.ohs.fhir.engine.sync.upload.UploadStrategy
+// 5.2 Imports for the sync task
+</code></pre>
+<p>Each step tells you which of these comments to paste its imports under. You never have to hunt for the right spot. The order of import lines does not matter.</p>
+<h4>One name, two meanings</h4>
+<p>Two different things in this codelab are both called <code>String</code>.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">How the code names it</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Import line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Kotlin's own text type</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>String</code></td>
+<td style="border: 1px solid #333; padding: 8px;">None. It is always there.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR text type, which wraps a value and can carry extensions</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>FhirString</code></td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.model.r4.String as FhirString</code></td>
+</tr>
+</tbody>
+</table>
+<p>The ending <code>as FhirString</code> gives the FHIR type a second name so the two do not clash. If a file imports <code>dev.ohs.fhir.model.r4.String</code> without that ending, every <code>String</code> in the file means the FHIR one, and the build fails with errors about type mismatches. Step 6 is where this import comes in.</p>
+<h4>Help when you are stuck</h4>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Help</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong> button, at the bottom of the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the five files needs and repairs the <code>String</code> import. This is the closest thing to what Android Studio does.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>step 4</code>, <code>step 5</code>, <code>step 6</code> or <code>step 7</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Replaces the five files with a working version of the code as it stands at the end of that step</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>step reset</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the five files back to the starter code</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>reset-server</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser</td>
+</tr>
+</tbody>
+</table>
+<p>Your own files are copied to the <code>backups</code> folder in your home folder before <code>step</code> or <strong>Fix imports</strong> change them.</p>
+<h2>4. Create the FHIR Engine instance</h2>
+<p>In this step, you'll initialize the FHIR Engine with the address of your local FHIR server.</p>
+<p>Start with the five imports this step needs. The web editor does not add imports for you, so you paste them in yourself, before any other code.</p>
+<ol>
+<li>
+<p>Go to <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt</code>. It is the file that is open in the Code area.</p>
+</li>
+<li>
+<p>Find the <code>// 4 Imports for the FHIR Engine</code> comment. It is on line 18, just under the line that starts with <code>package</code>.</p>
+</li>
+<li>
+<p>Replace that comment with the following code. The first line puts the comment back, so the imports end up right under it.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 4 Imports for the FHIR Engine
+import dev.ohs.fhir.engine.DatabaseErrorStrategy
+import dev.ohs.fhir.engine.FhirEngineConfiguration
+import dev.ohs.fhir.engine.FhirEngineProvider
+import dev.ohs.fhir.engine.ServerConfiguration
+import dev.ohs.fhir.engine.sync.remote.HttpLogger
+</code></pre>
+</li>
+</ol>
+<p>The <code>// 4 Imports</code> comment is not in the published codelab. The lab adds it to the starter code to mark the place.</p>
+<ol>
+<li>
+<p>Open <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt</code>. Find the
+<code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> comment in
+<code>initFhirEngine</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 4 Initialize the FHIR Engine
+FhirEngineProvider.init(
+  FhirEngineConfiguration(
+    databaseErrorStrategy = DatabaseErrorStrategy.RECREATE_AT_OPEN,
+    serverConfiguration =
+      ServerConfiguration(
+        baseUrl = baseUrl,
+        httpLogger =
+          HttpLogger(if (debug) HttpLogger.Level.BODY else HttpLogger.Level.BASIC),
+      ),
+    storageDirectory = storageDirectory,
+  ),
+  platformContext,
+)
+</code></pre>
+<p>Notes:</p>
+<ul>
+<li><code>platformContext</code>: the application <code>Context</code> on Android, <code>Unit</code> on other platforms.</li>
+<li><code>baseUrl</code>: the FHIR server's base URL.</li>
+<li><code>httpLogger</code>: logs the requests to the server. The logs show up in Logcat on Android, the
+Xcode console on iOS, the terminal on Desktop and the browser console on Web.</li>
+<li><code>storageDirectory</code>: where the database is stored. Used on desktop and web only.</li>
+<li><code>RECREATE_AT_OPEN</code>: if the database fails to open, the engine deletes it and makes a new one.</li>
+<li><code>enableEncryption = true</code> encrypts the database with SQLCipher. It is supported on Android
+only.</li>
+</ul>
+<p>The comment is on line 35 now that the imports are in, on the last line before the closing brace of the file. Press Ctrl+F and type <code>// 4 Replace</code> to jump to it. Select that one line, delete it and paste the block above where it was. The new block starts with its own numbered comment, <code>// 4 Initialize the FHIR Engine</code>.</p>
+<p>On the lab you do not need the browser console. The lab copies what the app logs there into the <strong>Output</strong> tab of the Editor.</p>
+</li>
+<li>
+<p>Each platform calls <code>initFhirEngine</code> once at startup. The starter already has these calls.</p>
+<p>On the lab the web entry point makes the call, in <code>shared/src/wasmJsMain/kotlin/dev/ohs/fhir/codelab/Main.kt</code>. You do not change it. The lab has changed one line of that file so the app finds the FHIR server at your lab address followed by <code>/fhir/</code>. The published file says <code>http://localhost:8080/fhir/</code>, which from your browser would mean your own computer.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">initFhirEngine(Unit, baseUrl = &quot;${pageOrigin()}/fhir/&quot;, debug = true)
+</code></pre>
+</li>
+<li>
+<p>Get the engine anywhere with <code>FhirEngineProvider.getInstance(platformContext)</code>.</p>
+</li>
+</ol>
+<p>Now run it. Save <code>FhirEngineSetup.kt</code> with Ctrl+S, wait for <code>BUILD OK</code> in the Build log, then look at the App tab.</p>
+<p>Now that the engine is initialized, run the app again. Instead of the <code>Hello World!</code> screen, you
+should see the patient list. The list stays empty until you sync with the server in the next
+step.</p>
+<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons and a <strong>Search by name</strong> field. The buttons do nothing yet.</p>
+<p>If the Build log prints <code>BUILD FAILED</code>, read the <strong>What to do</strong> list under the errors, or click <strong>Fix imports</strong> at the bottom of the Editor. If you would rather jump to the finished code, type <code>step 4</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the empty patient list on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h2>5. Sync data with the FHIR server</h2>
+<p>In this step, you'll download patients from the FHIR server into the local database, and upload
+local changes back to the server.</p>
+<p>This step changes four files. Each part below names its file, gives its imports first if it needs any, and then its code. Save each file when you finish its part. The app works once all four parts are in.</p>
+<h3>Step 1: Define which resources to download</h3>
+<p>Open <code>DownloadWorkManagerImpl.kt</code> in <code>commonMain</code>. Make the three changes below in order, because each one moves the lines under it down.</p>
+<p>Replace line 22 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Import for the download manager
+import dev.ohs.fhir.model.r4.Bundle
+</code></pre>
+<p>Replace lines 29 and 30, in <code>getNextRequest()</code>, with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Return the next download request
+val url = urls.removeFirstOrNull() ?: return null
+return DownloadRequest.of(url)
+</code></pre>
+<p>Replace lines 37 and 38, in <code>processResponse()</code>, with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Extract the resources from the response
+if (response is Bundle &amp;&amp; response.type.value == Bundle.BundleType.Searchset) {
+  return response.entry.mapNotNull { it.resource }
+}
+return emptyList()
+</code></pre>
+<p>The class now looks like this. Save the file.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class DownloadWorkManagerImpl : DownloadWorkManager {
+  private val urls = ArrayDeque(listOf(&quot;Patient&quot;))
+
+  override suspend fun getNextRequest(): DownloadRequest? {
+    // 5.1 Return the next download request
+    val url = urls.removeFirstOrNull() ?: return null
+    return DownloadRequest.of(url)
+  }
+
+  override suspend fun getSummaryRequestUrls() = mapOf&lt;ResourceType, String&gt;()
+
+  override suspend fun processResponse(response: Resource): Collection&lt;Resource&gt; {
+    // 5.1 Extract the resources from the response
+    if (response is Bundle &amp;&amp; response.type.value == Bundle.BundleType.Searchset) {
+      return response.entry.mapNotNull { it.resource }
+    }
+    return emptyList()
+  }
+}
+</code></pre>
+<p>This class has a queue of URLs to download. It extracts the resources from each returned bundle,
+and the engine saves them in the local database.</p>
+<h3>Step 2: Define how the app syncs</h3>
+<p>Open <code>AppFhirSyncTask.kt</code> in <code>commonMain</code>. Make the two changes below in order.</p>
+<p>Replace line 23 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.2 Imports for the sync task
+import dev.ohs.fhir.engine.FhirEngineProvider
+import dev.ohs.fhir.engine.sync.AcceptLocalConflictResolver
+import dev.ohs.fhir.engine.sync.upload.HttpCreateMethod
+import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod
+</code></pre>
+<p>Replace lines 31 to 39, which are the <code>// 5.2 Replace</code> comment and the four functions under it, with the following code. Keep the closing brace on line 40.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.2 Define the download manager, conflict resolver, FHIR Engine and upload strategy
+override fun getDownloadWorkManager(): DownloadWorkManager = DownloadWorkManagerImpl()
+
+override fun getConflictResolver(): ConflictResolver = AcceptLocalConflictResolver
+
+override fun getFhirEngine(): FhirEngine = FhirEngineProvider.getInstance(platformContext)
+
+override fun getUploadStrategy(): UploadStrategy =
+  UploadStrategy.forBundleRequest(
+    methodForCreate = HttpCreateMethod.PUT,
+    methodForUpdate = HttpUpdateMethod.PATCH,
+    squash = true,
+    bundleSize = 500,
+  )
+</code></pre>
+<p>Save the file.</p>
+<p>Code that ends in <code>TODO()</code> builds without error and only fails when the app runs, so check that none is left. The <strong>Still to do</strong> list in the Build log names any that is.</p>
+<p>Here, we've defined which download manager, conflict resolver, and FHIR Engine instance to use for
+syncing. All platforms use this class.</p>
+<p>Shared code starts a sync through the <code>SyncLauncher</code> interface. Each platform has its own
+implementation, which is already in the starter:</p>
+<ul>
+<li><strong>Desktop, Web, and iOS:</strong> <code>ForegroundSyncLauncher</code> runs <code>AppFhirSyncTask</code> with <code>runSync</code> in the
+app's coroutine. The sync stops if the app closes.</li>
+</ul>
+<p>The lab runs the web app, so this is the launcher your app uses. A sync runs only while the App tab is open. The lab has added one line to <code>ForegroundSyncLauncher.kt</code>, which prints the reason when a sync fails so that you can read it in the Output tab.</p>
+<p>On Android a different launcher keeps the sync running in the background. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> describes it.</p>
+<h3>Step 3: Start the sync</h3>
+<p>Open <code>PatientListViewModel.kt</code>. Find the
+<code>// 5.3 Replace with code from the codelab to start the sync.</code> comment in <code>triggerOneTimeSync()</code>
+and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.3 Start the sync
+scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
+</code></pre>
+<p>The file is in the same folder as the others. The comment is on line 67, and you can press Ctrl+F and type <code>// 5.3</code> to jump to it. Replace that one line with the two lines above. This part needs no new import. Save the file.</p>
+<p>This coroutine starts a one-time sync with the FHIR server, and forwards the state of the sync to
+the UI.</p>
+<h3>Step 4: Show when the sync finishes</h3>
+<p>Open <code>PatientListScreen.kt</code>. Find the
+<code>// 5.4 Replace with code from the codelab to show a message when the sync completes.</code> comment in
+<code>handleSyncJobStatus</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.4 Show a message when the sync completes
+when (syncJobStatus) {
+  is CurrentSyncJobStatus.Succeeded -&gt; {
+    viewModel.refreshPatients()
+    snackbarHostState.showSnackbar(&quot;Sync Finished&quot;)
+  }
+  else -&gt; {}
+}
+</code></pre>
+<p>The file is in the same folder as the others. The comment is on line 95, and you can press Ctrl+F and type <code>// 5.4</code> to jump to it. Replace that one line with the block above. This part needs no new import. Save the file.</p>
+<p>Here, when the sync finishes, the app reloads all patients from the local database with
+<code>refreshPatients()</code>, which is already in the starter, and shows a message to the user.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App tab and click <strong>Sync</strong>.</p>
+<p>Now that everything is set up, run your app and tap <strong>Sync</strong>. If everything works correctly, you
+should see the patients from your local FHIR server being downloaded and displayed in the app.</p>
+<p>The list shows the three test patients, and the words <strong>Sync Finished</strong> appear at the bottom for a few seconds. The Output tab in the Editor shows the requests the app sent to the FHIR server and the answers it got.</p>
+<p>If nothing appears in the app after a few seconds, the sync failed. The app shows nothing in that case, so look in two places.</p>
+<ul>
+<li>The <strong>Output</strong> tab in the Editor. A red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code> gives the reason. <code>NotImplementedError</code> means a <code>TODO()</code> is still in <code>AppFhirSyncTask.kt</code>. After fixing the code, wait for the app to reload before you click <strong>Sync</strong> again.</li>
+<li>The <strong>Still to do</strong> list in the Build log. Every <code>// 5</code> comment and every <code>TODO()</code> must be gone.</li>
+</ul>
+<p>If you would rather jump to the finished code, type <code>step 5</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the patient list after a sync, on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image8.png" alt="The patient list after a sync on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h2>6. Modify and upload patient data</h2>
+<p>In this step, you'll swap the address cities of patients in <code>Wakefield</code> and <code>Taunton</code>, then upload
+the changes to the FHIR server. All the code in this step goes in the <code>PatientListViewModel</code> class
+in <code>PatientListViewModel.kt</code>.</p>
+<p>Start with the two imports this step needs.</p>
+<ol>
+<li>
+<p>Open <code>PatientListViewModel.kt</code>.</p>
+</li>
+<li>
+<p>Find the <code>// 6 Imports for changing patient data</code> comment on line 31, just under the import lines.</p>
+</li>
+<li>
+<p>Replace that comment with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 6 Imports for changing patient data
+import dev.ohs.fhir.engine.search.StringFilterModifier
+import dev.ohs.fhir.model.r4.String as FhirString
+</code></pre>
+</li>
+</ol>
+<p>Copy the second line exactly, with <code>as FhirString</code> at its end. The section &quot;One name, two meanings&quot; earlier in this guide explains why.</p>
+<p>You'll also need the Kotlin FHIR <code>String</code> type. It has the same name as Kotlin's own <code>String</code>, so
+add it by hand with an alias:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">import dev.ohs.fhir.model.r4.String as FhirString
+</code></pre>
+<p>If you import <code>dev.ohs.fhir.model.r4.String</code> without the alias, it hides Kotlin's <code>String</code> and
+parameters such as <code>city: String</code> no longer compile.</p>
+<p>On the lab this line is the second of the two you just pasted, so there is nothing more to add.</p>
+<h3>Step 1: Search for patients by city</h3>
+<p>Find the <code>// 6.1 Replace with code from the codelab to search for patients by city.</code> comment and
+replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 6.1 Search for patients by city
+private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
+  fhirEngine
+    .search&lt;Patient&gt; {
+      filter(
+        StringClientParam(&quot;address-city&quot;),
+        {
+          modifier = StringFilterModifier.MATCHES_EXACTLY
+          value = city
+        },
+      )
+    }
+    .map { it.resource }
+</code></pre>
+<p>The comment is in <code>PatientListViewModel.kt</code>, a few lines under the <code>triggerOneTimeSync()</code> function. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 6.1</code> to jump to it. Select that one line, delete it and paste the block above where it was.</p>
+<p>There are no generated search parameter constants, so use the FHIR search parameter name, here
+<code>address-city</code>.</p>
+<h3>Step 2: Change the city of a patient</h3>
+<p>Find the <code>// 6.2 Replace with code from the codelab to change the city of a patient.</code> comment and
+replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 6.2 Change the city of a patient
+private fun Patient.withCity(city: String): Patient =
+  copy(
+    address =
+      address.mapIndexed { index, address -&gt;
+        if (index == 0) address.copy(city = FhirString(value = city)) else address
+      },
+  )
+</code></pre>
+<p>The comment is in the same file, just under the code you pasted for step 6.1. Press Ctrl+F and type <code>// 6.2</code> to jump to it, and replace that one line with the block above.</p>
+<p>Kotlin FHIR resources are immutable, so this function makes a copy of the patient with the new
+city.</p>
+<h3>Step 3: Update the patients, then sync</h3>
+<p>Find the <code>// 6.3 Replace with code from the codelab to update the patients and sync.</code> comment in
+<code>triggerUpdate()</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 6.3 Update the patients and sync
+scope.launch {
+  val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
+  val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
+
+  patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
+  patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
+
+  triggerOneTimeSync()
+}
+</code></pre>
+<p>The comment is in the same file, inside the <code>triggerUpdate()</code> function under the code for step 6.2. Press Ctrl+F and type <code>// 6.3</code> to jump to it, and replace that one line with the block above.</p>
+<p>After modifying the data locally, the app triggers a one-time sync to upload the changes to the
+FHIR server.</p>
+<p>Your <code>PatientListViewModel</code> class should now look like this:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class PatientListViewModel(
+  private val fhirEngine: FhirEngine,
+  private val syncLauncher: SyncLauncher,
+  private val scope: CoroutineScope,
+) {
+  private val _pollState = MutableSharedFlow&lt;CurrentSyncJobStatus&gt;()
+  val pollState: SharedFlow&lt;CurrentSyncJobStatus&gt; = _pollState
+
+  private val _patients = MutableStateFlow&lt;List&lt;Patient&gt;&gt;(emptyList())
+  val patients: StateFlow&lt;List&lt;Patient&gt;&gt; = _patients
+
+  private var loadJob: Job? = null
+
+  init {
+    refreshPatients()
+  }
+
+  /** Loads all patients from the local database, sorted by given name. */
+  fun refreshPatients() = showPatients {
+    fhirEngine
+      .search&lt;Patient&gt; { sort(StringClientParam(&quot;given&quot;), Order.ASCENDING) }
+      .map { it.resource }
+  }
+
+  /**
+   * Shows the patients that [load] returns. Cancels the previous load, so an older search can't
+   * replace the result of a newer one.
+   */
+  private fun showPatients(load: suspend () -&gt; List&lt;Patient&gt;) {
+    loadJob?.cancel()
+    loadJob = scope.launch { _patients.value = load() }
+  }
+
+  fun triggerOneTimeSync() {
+    // 5.3 Start the sync
+    scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
+  }
+
+  // 6.1 Search for patients by city
+  private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
+    fhirEngine
+      .search&lt;Patient&gt; {
+        filter(
+          StringClientParam(&quot;address-city&quot;),
+          {
+            modifier = StringFilterModifier.MATCHES_EXACTLY
+            value = city
+          },
+        )
+      }
+      .map { it.resource }
+
+  // 6.2 Change the city of a patient
+  private fun Patient.withCity(city: String): Patient =
+    copy(
+      address =
+        address.mapIndexed { index, address -&gt;
+          if (index == 0) address.copy(city = FhirString(value = city)) else address
+        },
+    )
+
+  /** Swaps the city of patients in Wakefield and Taunton, then syncs the changes. */
+  fun triggerUpdate() {
+    // 6.3 Update the patients and sync
+    scope.launch {
+      val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
+      val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
+
+      patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
+      patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
+
+      triggerOneTimeSync()
+    }
+  }
+
+  fun searchPatientsByName(nameQuery: String) {
+    // 7 Replace with code from the codelab to search for patients by name.
+  }
+}
+</code></pre>
+<p>If your class does not match, you can select it from the line <code>class PatientListViewModel(</code> to the last closing brace of the file and paste the block above over it. Then save the file and wait for <code>BUILD OK</code>.</p>
+<h3>Step 4: Test the functionality</h3>
+<ol>
+<li>Run your app and tap <strong>Update</strong>. You should see the address cities for patients <code>Aaron697</code> and
+<code>Abby752</code> swapped.</li>
+<li>Open your lab address followed by <code>/fhir/Patient/</code> in a browser, which is the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed. If that tab is still open, reload it. Verify that the address cities for
+patients <code>Aaron697</code> and <code>Abby752</code> are updated on the FHIR server.</li>
+</ol>
+<p>Each click on <strong>Update</strong> swaps the two cities again, so a second click puts them back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
+<p>If you would rather jump to the finished code, type <code>step 6</code> in the <strong>Terminal</strong> tab.</p>
+<h2>7. Search for patients by name</h2>
+<p>In this step, you'll filter the patient list by the name typed in the search field.</p>
+<p>Find the <code>// 7 Replace with code from the codelab to search for patients by name.</code> comment in
+<code>searchPatientsByName</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 7 Search for patients by name
+showPatients {
+  fhirEngine
+    .search&lt;Patient&gt; {
+      if (nameQuery.isNotEmpty()) {
+        filter(
+          StringClientParam(&quot;name&quot;),
+          {
+            modifier = StringFilterModifier.CONTAINS
+            value = nameQuery
+          },
+        )
+      }
+    }
+    .map { it.resource }
+}
+</code></pre>
+<p>The comment is in <code>PatientListViewModel.kt</code>, inside the <code>searchPatientsByName</code> function at the end of the file. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 7</code> to jump to it, and replace that one line with the block above. This step needs no new import, because <code>StringFilterModifier</code> came in with step 6. Save the file and wait for <code>BUILD OK</code>.</p>
+<p>Here, if <code>nameQuery</code> is not empty, the search returns only the patients whose names contain it.
+<code>showPatients</code>, which is already in the starter, shows the result. Each letter you type starts a
+new search, so <code>showPatients</code> cancels the previous search first. Otherwise an older search, such as
+the one for the first letter, could finish last and replace the result.</p>
+<p>Run your app again. You should now be able to enter a name, or part of a name, in the search field
+to filter the list of patients.</p>
+<p>On the lab, click in the <strong>Search by name</strong> field of the App tab and type <code>Abby</code>. The list shrinks to the one patient with that name. The search reads the database in your browser and sends nothing to the server, so nothing new appears in the Output tab.</p>
+<p>If you would rather jump to the finished code, type <code>step 7</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the list filtered by name, on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h2>8. Congratulations!</h2>
+<p style="border-left: 4px solid #2e7d32; background: #e8f5e9; padding: 8px 12px;">You have used the Kotlin FHIR Engine to manage FHIR resources in your app:</p>
+<ul>
+<li>Use the Sync API to sync FHIR resources with a FHIR server</li>
+<li>Use the Data Access API to create, read, update, and delete local FHIR resources</li>
+<li>Use the Search API to search local FHIR resources</li>
+</ul>
+<h3>What we've covered</h3>
+<ul>
+<li>How to run a local HAPI FHIR server with test data</li>
+<li>How to add the Kotlin FHIR Engine to your Kotlin Multiplatform app</li>
+<li>How to use the Sync API, Data Access API, and Search API of the Kotlin FHIR Engine</li>
+</ul>
+<h3>Next steps</h3>
+<ul>
+<li>Run the codelab on the other platforms: Desktop, Web and iOS</li>
+<li>Download other resource types by adding them to the <code>urls</code> queue in <code>DownloadWorkManagerImpl</code></li>
+<li>Add periodic sync. See <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/tree/main/engine-app"><code>engine-app</code></a>
+for an example on every platform.</li>
+<li>Explore the Search API. The <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/blob/main/docs/conformance.md">conformance</a>
+document lists the supported search parameter types, modifiers and prefixes.</li>
+</ul>
+<p>The other platforms need tools the lab does not have. To try them, follow the <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> on your own computer. Here are some things you can try on the lab.</p>
+<ul>
+<li>In step 7, change <code>StringFilterModifier.CONTAINS</code> to <code>StringFilterModifier.STARTS_WITH</code>, save, and search for <code>by</code></li>
+<li>In <code>PatientListViewModel.kt</code>, change <code>Order.ASCENDING</code> to <code>Order.DESCENDING</code> in <code>refreshPatients()</code>, save, and click <strong>Sync</strong></li>
+<li>Click <strong>Update</strong>, then read the Output tab to see the request the app sent to the server for the two changed patients</li>
+</ul>
+<h2>Troubleshooting</h2>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Symptom</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You saved a file and the Build log shows no new build</td>
+<td style="border: 1px solid #333; padding: 8px;">Check the file's tab for a white dot, which means it is not saved yet. Then click <strong>Build now</strong> at the very bottom of the Editor, or type <code>build</code> in the <strong>Terminal</strong> tab.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The App tab says the app is still building</td>
+<td style="border: 1px solid #333; padding: 8px;">Wait for <code>BUILD OK</code> in the Build log. The page reloads automatically.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The App tab did not change after a build</td>
+<td style="border: 1px solid #333; padding: 8px;">Check that <strong>Auto refresh</strong> is ticked, or click <strong>Refresh</strong>. If it still shows the old version, check that the Build log says <code>BUILD OK</code> and not <code>BUILD FAILED</code>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference</code> in the Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">An import is missing or misspelled. Click <strong>Fix imports</strong>, or compare your imports with the ones the step gives.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Errors about a type mismatch on <code>String</code>, or on <code>city</code></td>
+<td style="border: 1px solid #333; padding: 8px;">The file imports <code>dev.ohs.fhir.model.r4.String</code> without <code>as FhirString</code> at the end. Add the ending, or click <strong>Fix imports</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'searchByCity'</code> or <code>'withCity'</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Step 6.1 or 6.2 is missing. Step 6.3 calls both.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>is not abstract and does not implement abstract member</code></td>
+<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code> or <code>AppFhirSyncTask</code>. Paste the whole class from the step again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Expecting</code> or <code>Syntax error</code></td>
+<td style="border: 1px solid #333; padding: 8px;">A bracket, brace or quote is missing or extra near the line number in the error.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The app still says <code>Hello World!</code> after step 4</td>
+<td style="border: 1px solid #333; padding: 8px;">The build failed, or the <code>// 4 Replace</code> comment is still in <code>FhirEngineSetup.kt</code>. Read the Build log.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App tab and try again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 502 or 503 after <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR server is still starting. Wait a minute and click <strong>Sync</strong> again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Sync</strong> works but the list stays empty</td>
+<td style="border: 1px solid #333; padding: 8px;">Open the <strong>FHIR server</strong> address. If <code>total</code> is 0, type <code>reset-server</code> in the <strong>Terminal</strong> tab and sync again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
+<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App tab, then <strong>Sync</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">No patient is in <code>Wakefield</code> or <code>Taunton</code> in the app's data. Type <code>reset-server</code>, click <strong>Clear app data</strong>, then <strong>Sync</strong> and <strong>Update</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The app stays blank or never leaves its loading state</td>
+<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Nothing appears in the Output tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Guide, Build log or Output area is gone</td>
+<td style="border: 1px solid #333; padding: 8px;">Click its name in the bar at the very bottom of the Editor.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App</strong> address that <code>./lab-init.sh</code> printed.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The code is in a state you cannot fix</td>
+<td style="border: 1px solid #333; padding: 8px;">Type <code>step reset</code> in the <strong>Terminal</strong> tab, or <code>step</code> with the number of the last step you finished.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor asks for the password again</td>
+<td style="border: 1px solid #333; padding: 8px;">Run <code>./lab-init.sh --info</code> in the Heropa terminal. It prints the same password without restarting anything.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You came back and the tabs do not load</td>
+<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor or App address stopped working</td>
+<td style="border: 1px solid #333; padding: 8px;">The same cause and the same fix as the row above.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You lost the addresses or the password</td>
+<td style="border: 1px solid #333; padding: 8px;">Run <code>./lab-init.sh --info</code> in the Heropa terminal. It prints them again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The browser warns that the connection is not private</td>
+<td style="border: 1px solid #333; padding: 8px;">The lab is in reduced mode. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. See <em>If the lab starts in reduced mode</em>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor shows a notice about reduced mode, or has no Guide, Build log or Output area</td>
+<td style="border: 1px solid #333; padding: 8px;">The lab could not get a trusted certificate. Use the pages listed under <em>If the lab starts in reduced mode</em>, and run <code>./lab-init.sh</code> again later.</td>
+</tr>
+</tbody>
+</table>

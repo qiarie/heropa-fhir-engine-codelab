@@ -1,0 +1,111 @@
+<h2>Troubleshooting</h2>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Symptom</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You saved a file and the Build log shows no new build</td>
+<td style="border: 1px solid #333; padding: 8px;">Check the file's tab for a white dot, which means it is not saved yet. Then click <strong>Build now</strong> at the very bottom of the Editor, or type <code>build</code> in the <strong>Terminal</strong> tab.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The App tab says the app is still building</td>
+<td style="border: 1px solid #333; padding: 8px;">Wait for <code>BUILD OK</code> in the Build log. The page reloads automatically.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The App tab did not change after a build</td>
+<td style="border: 1px solid #333; padding: 8px;">Check that <strong>Auto refresh</strong> is ticked, or click <strong>Refresh</strong>. If it still shows the old version, check that the Build log says <code>BUILD OK</code> and not <code>BUILD FAILED</code>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference</code> in the Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">An import is missing or misspelled. Click <strong>Fix imports</strong>, or compare your imports with the ones the step gives.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Errors about a type mismatch on <code>String</code>, or on <code>city</code></td>
+<td style="border: 1px solid #333; padding: 8px;">The file imports <code>dev.ohs.fhir.model.r4.String</code> without <code>as FhirString</code> at the end. Add the ending, or click <strong>Fix imports</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'searchByCity'</code> or <code>'withCity'</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Step 6.1 or 6.2 is missing. Step 6.3 calls both.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>is not abstract and does not implement abstract member</code></td>
+<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code> or <code>AppFhirSyncTask</code>. Paste the whole class from the step again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Expecting</code> or <code>Syntax error</code></td>
+<td style="border: 1px solid #333; padding: 8px;">A bracket, brace or quote is missing or extra near the line number in the error.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The app still says <code>Hello World!</code> after step 4</td>
+<td style="border: 1px solid #333; padding: 8px;">The build failed, or the <code>// 4 Replace</code> comment is still in <code>FhirEngineSetup.kt</code>. Read the Build log.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App tab and try again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 502 or 503 after <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR server is still starting. Wait a minute and click <strong>Sync</strong> again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Sync</strong> works but the list stays empty</td>
+<td style="border: 1px solid #333; padding: 8px;">Open the <strong>FHIR server</strong> address. If <code>total</code> is 0, type <code>reset-server</code> in the <strong>Terminal</strong> tab and sync again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
+<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App tab, then <strong>Sync</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">No patient is in <code>Wakefield</code> or <code>Taunton</code> in the app's data. Type <code>reset-server</code>, click <strong>Clear app data</strong>, then <strong>Sync</strong> and <strong>Update</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The app stays blank or never leaves its loading state</td>
+<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Nothing appears in the Output tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Guide, Build log or Output area is gone</td>
+<td style="border: 1px solid #333; padding: 8px;">Click its name in the bar at the very bottom of the Editor.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App</strong> address that <code>./lab-init.sh</code> printed.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The code is in a state you cannot fix</td>
+<td style="border: 1px solid #333; padding: 8px;">Type <code>step reset</code> in the <strong>Terminal</strong> tab, or <code>step</code> with the number of the last step you finished.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor asks for the password again</td>
+<td style="border: 1px solid #333; padding: 8px;">Run <code>./lab-init.sh --info</code> in the Heropa terminal. It prints the same password without restarting anything.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You came back and the tabs do not load</td>
+<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor or App address stopped working</td>
+<td style="border: 1px solid #333; padding: 8px;">The same cause and the same fix as the row above.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">You lost the addresses or the password</td>
+<td style="border: 1px solid #333; padding: 8px;">Run <code>./lab-init.sh --info</code> in the Heropa terminal. It prints them again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The browser warns that the connection is not private</td>
+<td style="border: 1px solid #333; padding: 8px;">The lab is in reduced mode. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. See <em>If the lab starts in reduced mode</em>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The Editor shows a notice about reduced mode, or has no Guide, Build log or Output area</td>
+<td style="border: 1px solid #333; padding: 8px;">The lab could not get a trusted certificate. Use the pages listed under <em>If the lab starts in reduced mode</em>, and run <code>./lab-init.sh</code> again later.</td>
+</tr>
+</tbody>
+</table>

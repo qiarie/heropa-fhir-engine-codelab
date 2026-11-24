@@ -1,0 +1,247 @@
+<h2>3. Set up the project</h2>
+<h3>Project structure</h3>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Module</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>shared</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Kotlin Multiplatform module. <code>commonMain</code> holds the engine setup, sync, view model and UI. The other source sets hold each platform's entry point and sync.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>androidApp</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Android application. <code>FhirApplication</code> initializes the engine and <code>MainActivity</code> shows <code>App()</code>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>iosApp</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/iosMain</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>The platform entry points are already written for you. Everything you'll write in this codelab goes
+into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
+<ul>
+<li><code>FhirEngineSetup.kt</code></li>
+<li><code>DownloadWorkManagerImpl.kt</code></li>
+<li><code>AppFhirSyncTask.kt</code></li>
+<li><code>PatientListViewModel.kt</code></li>
+<li><code>PatientListScreen.kt</code></li>
+</ul>
+<p>Each place you'll change is marked with a numbered comment, such as
+<code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> The number tells you which
+step of the codelab adds the code.</p>
+<p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
+<h4>To open one of the five files</h4>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then <code>commonMain</code>, then the folder shown as <code>kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
+<h3>Import the app into Android Studio</h3>
+<p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
+<h3>The Kotlin FHIR Engine dependency</h3>
+<p>For your convenience, the Kotlin FHIR Engine dependencies have already been added to the
+<code>commonMain</code> source set of <code>shared/build.gradle.kts</code>:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">kotlin {
+  sourceSets {
+    commonMain.dependencies {
+      api(&quot;dev.ohs.fhir:fhir-engine:2.0.0-alpha05&quot;)
+      api(&quot;dev.ohs.fhir:fhir-model-r4:1.0.0-rc03&quot;)
+      // ...
+    }
+  }
+}
+</code></pre>
+<p>Because the dependencies are in <code>commonMain</code>, Gradle picks the right artifact for each target
+platform.</p>
+<p>The FHIR model is <a href="https://github.com/ohs-foundation/kotlin-fhir">Kotlin FHIR</a>, not HAPI. Kotlin
+FHIR resources are immutable. To change a resource, make a copy with <code>copy(...)</code>.</p>
+<p>You change nothing in this part. It only shows what is already in the project.</p>
+<h3>Sync your project with Gradle files</h3>
+<p>There is nothing to do on the lab. Every build the lab runs reads the Gradle files again.</p>
+<h3>Run the starter app</h3>
+<p>The starter app is already running on the lab as a web page. Look at the App tab.</p>
+<p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
+see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
+<p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h3>Run the app on other platforms</h3>
+<p>The lab runs the Web (Wasm) version of the app. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
+<p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
+<h3>How to run the app</h3>
+<p>You do the same four things for every step of the codelab.</p>
+<ol>
+<li>Change a file in the Code area.</li>
+<li>Save it with Ctrl+S, or Cmd+S on a Mac. Saving starts a build.</li>
+<li>Watch the Build log under the code. It prints <code>Building the app</code> and then, after up to a minute, <code>BUILD OK</code>.</li>
+<li>Switch to the App tab. It has reloaded automatically and shows the new version.</li>
+</ol>
+<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
+<p>If you save again while a build is running, the lab finishes that build and then runs one more, so your latest change is never missed.</p>
+<h3>Start a build yourself</h3>
+<p>You rarely need to, but you can start a build without changing a file. Do this when you are not sure a build ran, when the Build log shows nothing new after a save, or when you want to see the result of the last build again.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Way</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Button</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Build now</strong> in the bar at the very bottom of the Editor. It saves every open file first, then builds.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Command</td>
+<td style="border: 1px solid #333; padding: 8px;">Click the <strong>Terminal</strong> tab, type <code>build</code> and press Enter. This builds the files as they were last saved.</td>
+</tr>
+</tbody>
+</table>
+<p>Either way, the build appears in the Build log like any other, and ends with <code>BUILD OK</code> or <code>BUILD FAILED</code>. When nothing changed since the last build, it finishes in a few seconds.</p>
+<p>After each successful build, the Build log also prints a <strong>Still to do</strong> list of the numbered comments that are still in the code. It gets shorter as you go and is a quick way to see where you are.</p>
+<p>Some steps change more than one file. Save each file as you finish it. A build in between may fail because the other files are not done yet, and that is fine. The build after your last save is the one that counts.</p>
+<h3>When a build fails</h3>
+<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App tab keeps showing the last version that worked.</p>
+<h3>If you have used Android Studio</h3>
+<p>This table shows what takes the place of each thing you know.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">In Android Studio</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">On the lab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Open Android Studio</td>
+<td style="border: 1px solid #333; padding: 8px;">Use the Editor tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Run</strong> in the Android Studio toolbar</td>
+<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App tab. <strong>Build now</strong> does the same without a change.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Select <strong>Sync Project with Gradle Files</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing. Every build reads the Gradle files.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Read Logcat</td>
+<td style="border: 1px solid #333; padding: 8px;">Read the <strong>Output</strong> tab in the Editor, next to the Build log</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong> or <strong>Update</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> or <strong>Update</strong></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>http://localhost:8080/fhir/</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Your lab address followed by <code>/fhir/</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>docker compose down</code> and <code>docker compose up -d</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Type <code>reset-server</code> in the <strong>Terminal</strong> tab</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Android Studio prompts you to add the necessary imports</td>
+<td style="border: 1px solid #333; padding: 8px;">Paste the import lines yourself, under the numbered comment the step names</td>
+</tr>
+</tbody>
+</table>
+<h3>What this editor does not do for you</h3>
+<p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Android Studio does this</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">On the lab</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Offers to add an import when you paste code</td>
+<td style="border: 1px solid #333; padding: 8px;">You add each import line yourself</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Picks between two types with the same name</td>
+<td style="border: 1px solid #333; padding: 8px;">You must use the exact import line from the step</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Underlines mistakes in red as you type</td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing is underlined. Mistakes show in the Build log after you save.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Completes names as you type</td>
+<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Tidies indentation and removes unused imports</td>
+<td style="border: 1px solid #333; padding: 8px;">Nothing is tidied. Indentation does not affect the build, and an unused import is harmless.</td>
+</tr>
+</tbody>
+</table>
+<h4>What an import is</h4>
+<p>Code refers to things by short names, such as <code>FhirEngineProvider</code>. An import line says which library a short name comes from. If the import is missing, the build fails with <code>Unresolved reference</code>.</p>
+<h4>Where import lines go</h4>
+<p>All import lines of a file sit together near its top, each starting with the word <code>import</code>. Right under them, in each file that needs new imports, the lab has put a numbered comment. This is the top of <code>AppFhirSyncTask.kt</code>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">import dev.ohs.fhir.engine.sync.FhirSyncTask
+import dev.ohs.fhir.engine.sync.upload.UploadStrategy
+// 5.2 Imports for the sync task
+</code></pre>
+<p>Each step tells you which of these comments to paste its imports under. You never have to hunt for the right spot. The order of import lines does not matter.</p>
+<h4>One name, two meanings</h4>
+<p>Two different things in this codelab are both called <code>String</code>.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">How the code names it</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Import line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Kotlin's own text type</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>String</code></td>
+<td style="border: 1px solid #333; padding: 8px;">None. It is always there.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR text type, which wraps a value and can carry extensions</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>FhirString</code></td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.model.r4.String as FhirString</code></td>
+</tr>
+</tbody>
+</table>
+<p>The ending <code>as FhirString</code> gives the FHIR type a second name so the two do not clash. If a file imports <code>dev.ohs.fhir.model.r4.String</code> without that ending, every <code>String</code> in the file means the FHIR one, and the build fails with errors about type mismatches. Step 6 is where this import comes in.</p>
+<h4>Help when you are stuck</h4>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Help</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong> button, at the bottom of the Editor</td>
+<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the five files needs and repairs the <code>String</code> import. This is the closest thing to what Android Studio does.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>step 4</code>, <code>step 5</code>, <code>step 6</code> or <code>step 7</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Replaces the five files with a working version of the code as it stands at the end of that step</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>step reset</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the five files back to the starter code</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>reset-server</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser</td>
+</tr>
+</tbody>
+</table>
+<p>Your own files are copied to the <code>backups</code> folder in your home folder before <code>step</code> or <strong>Fix imports</strong> change them.</p>

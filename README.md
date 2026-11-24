@@ -272,6 +272,8 @@ A failed request no longer leaves the lab down. To see reduced mode without wait
 
 `course-manual.md` is written for the Heropa lab and its web editor. The lab instructions are the main text. Anyone who wants to use Android Studio is sent to the published codelab on the website instead.
 
+Heropa's course editor takes HTML, so the manual is converted before it is pasted in. Run `python3 tools/manual-to-html.py` from the repository root after every change to the manual. It writes the whole manual to `heropa-html/course-manual.html` and one file for each numbered section to `heropa-html/sections/`. Paste a file into the source view of the Heropa editor, not the visual view, so the editor keeps the markup as written. The script needs the `python3-markdown-it` package.
+
 It is built on the published codelab. It keeps the codelab's explanations, steps and code, and leaves out the passages that only make sense in Android Studio or on a learner's own computer. Those were the list of tools, the download, starting the server with Docker Compose, the import into Android Studio, the Gradle sync, running on a device, the commands for other platforms, the three import prompts, the Android call with `10.0.2.2`, the WorkManager launcher and the `localhost` check in step 6. The lab text covers each of those jobs in the way the lab does it.
 
 Three things from those passages are kept in another form.
