@@ -52,9 +52,8 @@
 #   IDE_AUTH         password or none. none makes the editor ask for no
 #                    password, which opens its terminal to anyone who reaches
 #                    the lab address. The default is password.
-#   LAB_QR           on or off. on prints QR codes for the Editor and the App
-#                    under the addresses, when qrencode is installed. The
-#                    default is on.
+#   LAB_QR           on or off. on prints a QR code for the App under the
+#                    addresses, when qrencode is installed. The default is on.
 #   CERTBOT_EMAIL    Let's Encrypt account address, optional
 #   LAB_HTTP_PORT and LAB_HTTPS_PORT, the ports nginx publishes
 #
@@ -145,38 +144,26 @@ EOF
 # A phone cannot reach an address on this machine, so a lab on localhost gets
 # no QR codes.
 #
-# Prints QR codes for the Editor and the App side by side, so a learner can
-# open either on a phone or tablet without typing the address. The codes hold
-# the addresses only, never the password. Nothing is printed when LAB_QR is
-# off, when qrencode is missing or when the output is not a terminal, because
-# the codes are drawn with block characters that only a terminal shows.
+# Prints a QR code for the App, so a learner can open it on a phone or tablet
+# without typing the address. The Editor gets no code, because it needs a
+# keyboard and a wide screen. Nothing is printed when LAB_QR is off, when
+# qrencode is missing or when the output is not a terminal, because the code
+# is drawn with block characters that only a terminal shows.
 qr_reachable() {
     [[ "$LAB_URL" != *://localhost* && "$LAB_URL" != *://127.0.0.1* ]]
 }
 
-print_qr_codes() {
+print_qr_code() {
     [[ "${LAB_QR:-on}" == on && -t 1 ]] || return 0
     qr_reachable || return 0
     command -v qrencode >/dev/null 2>&1 || return 0
-    local editor="$LAB_URL/ide/" app="$LAB_URL/preview/"
-    local left=() right=() width blank i rows
-    # -v 3 is the smallest size that holds a lab address, and asking for it
-    # for both keeps the two codes the same size.
-    mapfile -t left  < <(qrencode -t ANSIUTF8 -m 2 -v 3 "$editor" 2>/dev/null)
-    mapfile -t right < <(qrencode -t ANSIUTF8 -m 2 -v 3 "$app" 2>/dev/null)
-    (( ${#left[@]} && ${#right[@]} )) || return 0
-    # The ASCII form draws every square as two plain characters, which gives
-    # the width of the left code without counting escape codes.
-    width="$(qrencode -t ASCII -m 2 -v 3 "$editor" 2>/dev/null | sed -n 1p)"
-    width=$(( ${#width} / 2 ))
-    printf -v blank '%*s' "$width" ''
-    rows=$(( ${#left[@]} > ${#right[@]} ? ${#left[@]} : ${#right[@]} ))
+    local code=() line
+    mapfile -t code < <(qrencode -t ANSIUTF8 -m 2 "$LAB_URL/preview/" 2>/dev/null)
+    (( ${#code[@]} )) || return 0
     echo
-    echo "  Scan a code with a phone or tablet camera to open that address there."
-    echo
-    printf '  %-*s    %s\n' "$width" "Editor" "App"
-    for (( i = 0; i < rows; i++ )); do
-        printf '  %s    %s\n' "${left[i]:-$blank}" "${right[i]:-}"
+    echo "  Scan the QR code to preview the app on your phone"
+    for line in "${code[@]}"; do
+        printf '  %s\n' "$line"
     done
 }
 
@@ -213,7 +200,7 @@ if (( INFO )); then
     echo "Open these in the browser on your own computer."
     echo
     print_addresses
-    print_qr_codes
+    print_qr_code
     if [[ "$LAB_MODE" != full ]]; then
         echo
         echo "The lab is in REDUCED MODE. Run ./lab-init.sh to try for a trusted"
@@ -618,7 +605,7 @@ $headline
 
 EOF
 print_addresses
-print_qr_codes
+print_qr_code
 
 if [[ -z "$PREV_URL" ]]; then
     cat <<EOF
