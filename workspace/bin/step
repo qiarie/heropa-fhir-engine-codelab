@@ -44,7 +44,7 @@ case "${1:-}" in
         done
         echo "The code is back to the starter. The app is rebuilding."
         echo "The app keeps its patients in your browser. To empty that as well,"
-        echo "click  Clear app data  at the top of the App tab."
+        echo "click  Clear app data  at the top of the App preview tab."
         ;;
     *)
         usage

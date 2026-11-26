@@ -2,10 +2,10 @@
 # hapi is the FHIR server the app syncs with. nginx is the only thing
 # published, and it gives each part a path.
 #
-#   /       a start page with links to the ones below
-#   /ide/   the editor
-#   /app/   the web app the learner is building
-#   /fhir/  the FHIR server
+#   /          a start page with links to the ones below
+#   /ide/      the editor
+#   /preview/  the web app the learner is building, with a toolbar
+#   /fhir/     the FHIR server
 #
 # Start it with ./lab-init.sh, which writes .env and the certificate first.
 

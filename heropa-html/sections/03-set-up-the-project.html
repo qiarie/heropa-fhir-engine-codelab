@@ -18,10 +18,11 @@
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>iosApp</code></td>
-<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/iosMain</code>.</td>
+<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/src/iosMain</code>.</td>
 </tr>
 </tbody>
 </table>
+<p>The Explorer leaves out the <code>iosApp</code> folder, which the lab does not use.</p>
 <p>The platform entry points are already written for you. Everything you'll write in this codelab goes
 into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
 <ul>
@@ -36,7 +37,7 @@ into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</cod
 step of the codelab adds the code.</p>
 <p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
 <h4>To open one of the five files</h4>
-<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then <code>commonMain</code>, then the folder shown as <code>kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
 <p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
 <h3>Import the app into Android Studio</h3>
 <p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
@@ -61,13 +62,13 @@ FHIR resources are immutable. To change a resource, make a copy with <code>copy(
 <h3>Sync your project with Gradle files</h3>
 <p>There is nothing to do on the lab. Every build the lab runs reads the Gradle files again.</p>
 <h3>Run the starter app</h3>
-<p>The starter app is already running on the lab as a web page. Look at the App tab.</p>
+<p>The starter app is already running on the lab as a web page. Look at the App preview tab.</p>
 <p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
 see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
 <p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
 <p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h3>Run the app on other platforms</h3>
-<p>The lab runs the Web (Wasm) version of the app. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
+<p>The lab builds and runs the Web (Wasm) version of the app and no other. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
 <p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
 <h3>How to run the app</h3>
 <p>You do the same four things for every step of the codelab.</p>
@@ -75,9 +76,9 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <li>Change a file in the Code area.</li>
 <li>Save it with Ctrl+S, or Cmd+S on a Mac. Saving starts a build.</li>
 <li>Watch the Build log under the code. It prints <code>Building the app</code> and then, after up to a minute, <code>BUILD OK</code>.</li>
-<li>Switch to the App tab. It has reloaded automatically and shows the new version.</li>
+<li>Switch to the App preview tab. It has reloaded automatically and shows the new version.</li>
 </ol>
-<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
+<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App preview tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
 <p>If you save again while a build is running, the lab finishes that build and then runs one more, so your latest change is never missed.</p>
 <h3>Start a build yourself</h3>
 <p>You rarely need to, but you can start a build without changing a file. Do this when you are not sure a build ran, when the Build log shows nothing new after a save, or when you want to see the result of the last build again.</p>
@@ -103,7 +104,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <p>After each successful build, the Build log also prints a <strong>Still to do</strong> list of the numbered comments that are still in the code. It gets shorter as you go and is a quick way to see where you are.</p>
 <p>Some steps change more than one file. Save each file as you finish it. A build in between may fail because the other files are not done yet, and that is fine. The build after your last save is the one that counts.</p>
 <h3>When a build fails</h3>
-<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App tab keeps showing the last version that worked.</p>
+<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App preview tab keeps showing the last version that worked.</p>
 <h3>If you have used Android Studio</h3>
 <p>This table shows what takes the place of each thing you know.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -120,7 +121,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Click <strong>Run</strong> in the Android Studio toolbar</td>
-<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App tab. <strong>Build now</strong> does the same without a change.</td>
+<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App preview tab. <strong>Build now</strong> does the same without a change.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Select <strong>Sync Project with Gradle Files</strong></td>
@@ -148,6 +149,34 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 </tbody>
 </table>
+<h3>Two ways to put code into your file</h3>
+<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 6 also have an <strong>Insert</strong> button next to it.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Button</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Copy</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Copies the code. You then click in your file at the place the step names and paste with Ctrl+V.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Insert</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the code into your file for you, at the place the step names. It brings the file to the front and selects the new code so you can see what changed.</td>
+</tr>
+</tbody>
+</table>
+<p>Use whichever you like. The steps describe the copy and paste way in full, and <strong>Insert</strong> does the same thing in one click.</p>
+<ul>
+<li><strong>Insert</strong> does not save the file. Press Ctrl+S afterwards, as each step says, and the build starts.</li>
+<li>Ctrl+Z takes the code out again.</li>
+<li>A second click changes nothing. A message says the code is already there.</li>
+<li>If <strong>Insert</strong> cannot find the place, a message says so. This happens when an earlier step is missing or the line it looks for was changed. Use <strong>Copy</strong> then.</li>
+</ul>
+<p>A block that only shows what your file should look like has no <strong>Insert</strong> button. Step 7 has none either, so you paste that one by hand.</p>
 <h3>What this editor does not do for you</h3>
 <p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -172,7 +201,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Completes names as you type</td>
-<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code.</td>
+<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code, or click <strong>Insert</strong> on the block.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Tidies indentation and removes unused imports</td>
@@ -239,7 +268,7 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 <td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App preview tab</td>
 <td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser</td>
 </tr>
 </tbody>

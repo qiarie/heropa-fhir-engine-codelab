@@ -26,7 +26,7 @@ if curl -sf -m 60 -o /dev/null -X POST -H 'Content-Type: application/fhir+json' 
         --data-binary "@$DATA" "$FHIR/"; then
     echo "The three test patients are back to their first state on the FHIR server."
     echo "The app still holds its own copy. To start it afresh as well, click"
-    echo "Clear app data  at the top of the App tab, then tap  Sync  in the app."
+    echo "Clear app data  at the top of the App preview tab, then tap  Sync  in the app."
 else
     echo "The FHIR server refused the test patients. Try again in a minute." >&2
     exit 1

@@ -12,11 +12,11 @@
 <td style="border: 1px solid #333; padding: 8px;">Check the file's tab for a white dot, which means it is not saved yet. Then click <strong>Build now</strong> at the very bottom of the Editor, or type <code>build</code> in the <strong>Terminal</strong> tab.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The App tab says the app is still building</td>
+<td style="border: 1px solid #333; padding: 8px;">The App preview tab says the app is still building</td>
 <td style="border: 1px solid #333; padding: 8px;">Wait for <code>BUILD OK</code> in the Build log. The page reloads automatically.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The App tab did not change after a build</td>
+<td style="border: 1px solid #333; padding: 8px;">The App preview tab did not change after a build</td>
 <td style="border: 1px solid #333; padding: 8px;">Check that <strong>Auto refresh</strong> is ticked, or click <strong>Refresh</strong>. If it still shows the old version, check that the Build log says <code>BUILD OK</code> and not <code>BUILD FAILED</code>.</td>
 </tr>
 <tr>
@@ -45,10 +45,10 @@
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App tab and try again.</td>
+<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 502 or 503 after <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 503 after <strong>Sync</strong></td>
 <td style="border: 1px solid #333; padding: 8px;">The FHIR server is still starting. Wait a minute and click <strong>Sync</strong> again.</td>
 </tr>
 <tr>
@@ -57,7 +57,7 @@
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
-<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App tab, then <strong>Sync</strong>.</td>
+<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App preview tab, then <strong>Sync</strong>.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>
@@ -65,19 +65,19 @@
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The app stays blank or never leaves its loading state</td>
-<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
+<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Brave, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Nothing appears in the Output tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App preview tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The Guide, Build log or Output area is gone</td>
 <td style="border: 1px solid #333; padding: 8px;">Click its name in the bar at the very bottom of the Editor.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App</strong> address that <code>./lab-init.sh</code> printed.</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app preview</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App preview</strong> address that <code>./lab-init.sh</code> printed.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The code is in a state you cannot fix</td>
@@ -89,10 +89,10 @@
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">You came back and the tabs do not load</td>
-<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
+<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two to three minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The Editor or App address stopped working</td>
+<td style="border: 1px solid #333; padding: 8px;">The Editor or App preview address stopped working</td>
 <td style="border: 1px solid #333; padding: 8px;">The same cause and the same fix as the row above.</td>
 </tr>
 <tr>

@@ -6,7 +6,7 @@
 </li>
 <li>
 <p>Start the lab.</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
 ./lab-init.sh
 </code></pre>
 </li>
@@ -17,7 +17,7 @@ The lab is ready. Open these in the browser on your own computer.
 
   Editor            https://203-0-113-10.sslip.io/ide/
   Editor password   4827
-  App               https://203-0-113-10.sslip.io/preview/
+  App preview       https://203-0-113-10.sslip.io/preview/
   FHIR server       https://203-0-113-10.sslip.io/fhir/Patient
 
   Scan the QR code to preview the app on your phone
@@ -25,8 +25,8 @@ The lab is ready. Open these in the browser on your own computer.
 
 First steps
   1. Open the Editor address and enter the password.
-  2. Click Open app at the very bottom of the Editor. The app opens in a
-     second tab.
+  2. Click Open app preview at the very bottom of the Editor. The app
+     opens in a second tab.
 
 Lost these details? Run ./lab-init.sh --info to print them again.
 The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
@@ -35,16 +35,16 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </li>
 </ol>
 <p style="border-left: 4px solid #e0a800; background: #fff8e1; padding: 8px 12px;"><strong>The addresses and password in this manual are examples only.</strong> Wherever you see <code>203-0-113-10.sslip.io</code>, <code>203.0.113.10</code> or the password <code>4827</code>, use the values from your own summary instead. Your addresses and password are your own. You can get them back at any time, and the section <em>Find your addresses again</em> below explains how.</p>
-<p>Where the example shows <code>[QR code]</code>, your terminal draws a real QR code for the App. Scan it with the camera of a phone or tablet to open the App there without typing the address. The start page of your lab, which is the address with nothing after the name, shows the same code. The App on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App on your computer. If the code looks like broken characters in your terminal, ignore it and type the address.</p>
+<p>Where the example shows <code>[QR code]</code>, your terminal draws a real QR code for the App preview. Scan it with the camera of a phone or tablet to open the App preview there without typing the address. The start page of your lab, which is the address with nothing after the name, shows the same code. The App preview on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App preview on your computer. If the code looks like broken characters in your terminal, ignore it and type the address.</p>
 <p>The part of each address before <code>/ide/</code> is your lab address. In the example it is <code>https://203-0-113-10.sslip.io</code>. This guide says &quot;your lab address&quot; wherever the published codelab says <code>http://localhost:8080</code>.</p>
 <h3>Open the editor and the app</h3>
-<p>You work in two browser tabs, one for the Editor and one for the App. Open both in the same browser, because the app's output travels between them through that browser.</p>
+<p>You work in two browser tabs, one for the Editor and one for the App preview. Open both in the same browser, because the app's output travels between them through that browser.</p>
 <ol>
 <li>Open the <strong>Editor</strong> address in a new tab. Type the editor password, which is a code of four digits, and press <strong>Submit</strong>. If the summary shows <code>none needed</code> instead of a password, the Editor opens without asking.</li>
-<li>In the bar at the very bottom of the Editor, click <strong>Open app</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App</strong> address yourself.</li>
+<li>In the bar at the very bottom of the Editor, click <strong>Open app preview</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App preview</strong> address yourself.</li>
 </ol>
 <p>If you have room, put the two tabs side by side in separate windows.</p>
-<p>The Editor tab has six areas. The last three share the space under the code, and you switch between them by clicking their tabs.</p>
+<p>The Editor tab has six areas. The Build log, the Output and the Terminal share the space under the code, and you switch between them by clicking their tabs.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -96,8 +96,8 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </thead>
 <tbody>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong></td>
-<td style="border: 1px solid #333; padding: 8px;">Opens the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app preview</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Opens the App preview tab</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Build now</strong></td>
@@ -121,7 +121,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 </tbody>
 </table>
-<p>The App tab has a bar along the top and a strip along the bottom.</p>
+<p>The App preview tab has a bar along the top and a strip along the bottom.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -153,18 +153,23 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tbody>
 </table>
 <h3>Find your addresses again</h3>
-<p>Come here when you return to the lab after a break, when the Editor or App tab stops loading, or when you have lost the addresses or the password.</p>
+<p>Come here when you return to the lab after a break, when the Editor or App preview tab stops loading, or when you have lost the addresses or the password.</p>
 <p>The lab VM stops when you close the course, when you stop it yourself, and when it sits idle for a while. Your code stays on it. The VM is set up to keep the same IP address, so the same addresses normally work again once it is running.</p>
+<p>If you only lost the addresses or the password, ask the lab to print them again. Open the terminal of the VM and run these two commands. They answer at once and restart nothing.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
+./lab-init.sh --info
+</code></pre>
+<p>The <code>--info</code> option prints the addresses the lab last used. It does not check whether the address of the VM changed. If the tabs do not load at those addresses, follow the steps below.</p>
 <ol>
 <li>
 <p>Open the course in Heropa and start the VM if it is stopped. Give it two to three minutes, because the FHIR server takes that long to start.</p>
 </li>
 <li>
-<p>Reload the Editor and App tabs. If they load, you are done.</p>
+<p>Reload the Editor and App preview tabs. If they load, you are done.</p>
 </li>
 <li>
-<p>If they do not load, or you no longer have the addresses, open the terminal of the VM and run the same two commands as before.</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+<p>If they do not load, open the terminal of the VM and run the same two commands you used to start the lab, this time without <code>--info</code>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
 ./lab-init.sh
 </code></pre>
 </li>
@@ -179,11 +184,11 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
   Password   The same as before.
   Your code  Kept as you left it.
 </code></pre>
-<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app</strong>.</p>
+<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App preview tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app preview</strong>.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
   Address    CHANGED. It was https://203-0-113-10.sslip.io
-             Close the old Editor and App tabs. They no longer work. Open
-             the two addresses above.
+             Close the old Editor and App preview tabs. They no longer work.
+             Open the two addresses above.
   Password   The same as before.
   Your code  Kept as you left it.
 </code></pre>
@@ -196,7 +201,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </thead>
 <tbody>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Editor and App addresses</td>
+<td style="border: 1px solid #333; padding: 8px;">Editor and App preview addresses</td>
 <td style="border: 1px solid #333; padding: 8px;">Normally the same. The summary says <code>CHANGED</code> when they are not.</td>
 </tr>
 <tr>
@@ -213,18 +218,22 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
-<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App tab, so the app and the server agree again.</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Build log and Output</td>
-<td style="border: 1px solid #333; padding: 8px;">Start empty, and fill again at the next build and the next <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Starts empty, and fills again at the next build</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Keeps its earlier entries when the address is the same. A new address starts it empty, and it fills again at the next <strong>Sync</strong>.</td>
 </tr>
 </tbody>
 </table>
-<p>The command is safe to run at any time and as often as you like. It changes nothing when the address is the same. It always waits for the FHIR server to answer, which takes up to two minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
+<p>The command is safe to run at any time and as often as you like. When the address is the same your code, password and addresses stay as they were. Reload any tab that stopped for a moment. It always waits for the FHIR server to answer, which takes up to three minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
 <p>Always copy the addresses from the summary. They are made from the IP address of the VM, normally with dashes instead of dots and <code>.sslip.io</code> at the end, so an example IP of <code>203.0.113.10</code> would give <code>https://203-0-113-10.sslip.io/ide/</code>. Sometimes the summary shows the plain IP, such as <code>https://203.0.113.10/ide/</code>, with a note that says why. Those addresses work in exactly the same way.</p>
 <h3>If the lab starts in reduced mode</h3>
-<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the summary from <code>./lab-init.sh</code> opens with the words <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
+<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the first line of the summary from <code>./lab-init.sh</code> says <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
 <p>Your code, the build and the app all work in reduced mode. Two things are different.</p>
 <ol>
 <li>Your browser shows a warning page the first time you open the Editor address. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. You do this once. The warning appears because the lab made its own certificate, and it is expected here.</li>
@@ -248,7 +257,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Output area in the Editor</td>
-<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App preview tab</td>
 </tr>
 </tbody>
 </table>

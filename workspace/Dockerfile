@@ -71,7 +71,7 @@ RUN cd "$CODELAB_DIR" \
       commit -q -a -m "Adapt the starter for the lab"
 
 # Warm the Gradle cache. The finished codelab is built first so everything it
-# pulls in is already downloaded. The starter is built last so the App tab
+# pulls in is already downloaded. The starter is built last so the App preview tab
 # shows it as soon as the lab starts.
 RUN cd "$CODELAB_DIR" \
  && cp /opt/codelab/solutions/step-7/*.kt "$CODELAB_SRC/" \

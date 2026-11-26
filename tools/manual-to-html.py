@@ -3,7 +3,7 @@
 
 Heropa's editor keeps inline styles and drops classes and stylesheets, so
 every style is written on the element itself. The output goes to heropa-html,
-as one whole page and as one file for each numbered section.
+as one whole page and as one file for each section.
 
 Run it from the repository root after every change to the manual.
 
@@ -99,7 +99,11 @@ def slug(title):
 
 
 def main():
-    page = convert(SOURCE.read_text(encoding="utf-8"))
+    source = SOURCE.read_text(encoding="utf-8")
+    # These lines tell the Guide in the Editor where its Insert button puts a
+    # block. They mean nothing on a Heropa page.
+    source = re.sub(r"^[ \t]*<!--\s*codelab-insert\b.*?-->[ \t]*\n", "", source, flags=re.M)
+    page = convert(source)
 
     if OUT.exists():
         shutil.rmtree(OUT)

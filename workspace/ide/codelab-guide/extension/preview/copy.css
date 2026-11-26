@@ -31,3 +31,26 @@ pre.codelab-has-copy {
   color: var(--vscode-button-foreground, #ffffff);
   background: var(--vscode-button-background, #0e639c);
 }
+
+/* The Insert button sits to the left of Copy. It is a link, so it needs the
+   colours of a button said again. */
+a.codelab-insert,
+a.codelab-insert:hover,
+a.codelab-insert:focus {
+  right: 52px;
+  text-decoration: none;
+  opacity: 1;
+  color: var(--vscode-button-foreground, #ffffff);
+  background: var(--vscode-button-background, #0e639c);
+}
+
+a.codelab-insert:hover,
+a.codelab-insert:focus {
+  background: var(--vscode-button-hoverBackground, #1177bb);
+}
+
+/* Two buttons are wide enough to cover a short line of code, so a block
+   that has both keeps a clear strip for them above the code. */
+pre.codelab-has-insert {
+  padding-top: 30px;
+}

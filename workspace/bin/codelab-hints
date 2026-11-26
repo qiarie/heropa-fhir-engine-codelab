@@ -66,7 +66,7 @@ if has "Unresolved reference 'withCity'"; then
     hint "Step 6.2 is missing. It adds the function withCity, which step 6.3 calls."
 fi
 if has "Unresolved reference '(showPatients|scope|syncLauncher|_pollState|fhirEngine|urls|loadJob|_patients|refreshPatients|triggerOneTimeSync)'"; then
-    hint "Part of the starter code was deleted by accident. Run  step 4  with the number of the last step you finished to get clean files, then redo the step you are on."
+    hint "Part of the starter code was deleted by accident. Run  step  followed by the number of the last step you finished, such as  step 5,  to get clean files, then redo the step you are on."
 fi
 if has "is not abstract and does not implement abstract"; then
     hint "A class is incomplete. A missing import in that file can cause this, so click  Fix imports  first. If the error stays, a function was deleted. In step 5.1 keep all three functions of DownloadWorkManagerImpl. In step 5.2 replace the four functions of AppFhirSyncTask with the four from the codelab."
@@ -98,4 +98,4 @@ if [[ "${#hints[@]}" -gt 0 ]]; then
     echo
 fi
 printf 'To add missing imports for you, click  \033[1mFix imports\033[0m  in the bar at the bottom of the Editor.\n'
-printf 'To jump to a working version of a step, run  \033[1mstep 4\033[0m  with the number of the step.\n'
+printf 'To jump to a working version of a step, run  \033[1mstep\033[0m  followed by its number, such as  \033[1mstep 5\033[0m.\n'

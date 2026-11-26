@@ -7,6 +7,7 @@
 <p>In this codelab, you're going to build a Kotlin Multiplatform app with the Kotlin FHIR Engine. Your
 app will use the engine to download FHIR resources from a FHIR server, and upload any local changes
 to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).</p>
+<p>This lab focuses on the Web (Wasm) version. Wasm is short for WebAssembly, the format that lets the app run inside your browser. Every build on the lab produces that version only, and the other platforms are not built here.</p>
 <h3>What you'll learn</h3>
 <ul>
 <li>How to run a local HAPI FHIR server with Docker</li>
@@ -15,9 +16,9 @@ to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).
 <li>How to use the Search API</li>
 <li>How to use the Data Access APIs to create, read, update, and delete FHIR resources locally</li>
 </ul>
-<p>On the lab the HAPI FHIR server is started for you, so you skip the first of these. The block in part 2 shows how the published codelab does it.</p>
+<p>On the lab the HAPI FHIR server is started for you, so you skip the first of these.</p>
 <h3>What you'll need</h3>
-<p>On the lab you need only a recent version of Chrome, Edge, Firefox or Safari, in an ordinary window. The app keeps its data in the browser, which private or incognito windows may not allow.</p>
+<p>On the lab you need only a recent version of Chrome, Edge, Brave, Firefox or Safari, in an ordinary window. The app keeps its data in the browser, which private or incognito windows may not allow.</p>
 <p>You do not need to know Kotlin. Every change is given in full, and this guide says exactly which file to open and where to put each line.</p>
 <p>This codelab is focused on the
 <a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>. Non-relevant concepts
@@ -32,7 +33,7 @@ built a Kotlin Multiplatform app before, you can start by
 </li>
 <li>
 <p>Start the lab.</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
 ./lab-init.sh
 </code></pre>
 </li>
@@ -43,7 +44,7 @@ The lab is ready. Open these in the browser on your own computer.
 
   Editor            https://203-0-113-10.sslip.io/ide/
   Editor password   4827
-  App               https://203-0-113-10.sslip.io/preview/
+  App preview       https://203-0-113-10.sslip.io/preview/
   FHIR server       https://203-0-113-10.sslip.io/fhir/Patient
 
   Scan the QR code to preview the app on your phone
@@ -51,8 +52,8 @@ The lab is ready. Open these in the browser on your own computer.
 
 First steps
   1. Open the Editor address and enter the password.
-  2. Click Open app at the very bottom of the Editor. The app opens in a
-     second tab.
+  2. Click Open app preview at the very bottom of the Editor. The app
+     opens in a second tab.
 
 Lost these details? Run ./lab-init.sh --info to print them again.
 The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
@@ -61,16 +62,16 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </li>
 </ol>
 <p style="border-left: 4px solid #e0a800; background: #fff8e1; padding: 8px 12px;"><strong>The addresses and password in this manual are examples only.</strong> Wherever you see <code>203-0-113-10.sslip.io</code>, <code>203.0.113.10</code> or the password <code>4827</code>, use the values from your own summary instead. Your addresses and password are your own. You can get them back at any time, and the section <em>Find your addresses again</em> below explains how.</p>
-<p>Where the example shows <code>[QR code]</code>, your terminal draws a real QR code for the App. Scan it with the camera of a phone or tablet to open the App there without typing the address. The start page of your lab, which is the address with nothing after the name, shows the same code. The App on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App on your computer. If the code looks like broken characters in your terminal, ignore it and type the address.</p>
+<p>Where the example shows <code>[QR code]</code>, your terminal draws a real QR code for the App preview. Scan it with the camera of a phone or tablet to open the App preview there without typing the address. The start page of your lab, which is the address with nothing after the name, shows the same code. The App preview on a phone is for a look only. What it prints does not reach the Output tab on your computer. It also keeps its own patients, apart from the App preview on your computer. If the code looks like broken characters in your terminal, ignore it and type the address.</p>
 <p>The part of each address before <code>/ide/</code> is your lab address. In the example it is <code>https://203-0-113-10.sslip.io</code>. This guide says &quot;your lab address&quot; wherever the published codelab says <code>http://localhost:8080</code>.</p>
 <h3>Open the editor and the app</h3>
-<p>You work in two browser tabs, one for the Editor and one for the App. Open both in the same browser, because the app's output travels between them through that browser.</p>
+<p>You work in two browser tabs, one for the Editor and one for the App preview. Open both in the same browser, because the app's output travels between them through that browser.</p>
 <ol>
 <li>Open the <strong>Editor</strong> address in a new tab. Type the editor password, which is a code of four digits, and press <strong>Submit</strong>. If the summary shows <code>none needed</code> instead of a password, the Editor opens without asking.</li>
-<li>In the bar at the very bottom of the Editor, click <strong>Open app</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App</strong> address yourself.</li>
+<li>In the bar at the very bottom of the Editor, click <strong>Open app preview</strong>. The app opens in a second tab. If your browser blocks the new tab, allow it, or open the <strong>App preview</strong> address yourself.</li>
 </ol>
 <p>If you have room, put the two tabs side by side in separate windows.</p>
-<p>The Editor tab has six areas. The last three share the space under the code, and you switch between them by clicking their tabs.</p>
+<p>The Editor tab has six areas. The Build log, the Output and the Terminal share the space under the code, and you switch between them by clicking their tabs.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -122,8 +123,8 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </thead>
 <tbody>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong></td>
-<td style="border: 1px solid #333; padding: 8px;">Opens the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app preview</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Opens the App preview tab</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Build now</strong></td>
@@ -147,7 +148,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 </tbody>
 </table>
-<p>The App tab has a bar along the top and a strip along the bottom.</p>
+<p>The App preview tab has a bar along the top and a strip along the bottom.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -179,18 +180,23 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tbody>
 </table>
 <h3>Find your addresses again</h3>
-<p>Come here when you return to the lab after a break, when the Editor or App tab stops loading, or when you have lost the addresses or the password.</p>
+<p>Come here when you return to the lab after a break, when the Editor or App preview tab stops loading, or when you have lost the addresses or the password.</p>
 <p>The lab VM stops when you close the course, when you stop it yourself, and when it sits idle for a while. Your code stays on it. The VM is set up to keep the same IP address, so the same addresses normally work again once it is running.</p>
+<p>If you only lost the addresses or the password, ask the lab to print them again. Open the terminal of the VM and run these two commands. They answer at once and restart nothing.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
+./lab-init.sh --info
+</code></pre>
+<p>The <code>--info</code> option prints the addresses the lab last used. It does not check whether the address of the VM changed. If the tabs do not load at those addresses, follow the steps below.</p>
 <ol>
 <li>
 <p>Open the course in Heropa and start the VM if it is stopped. Give it two to three minutes, because the FHIR server takes that long to start.</p>
 </li>
 <li>
-<p>Reload the Editor and App tabs. If they load, you are done.</p>
+<p>Reload the Editor and App preview tabs. If they load, you are done.</p>
 </li>
 <li>
-<p>If they do not load, or you no longer have the addresses, open the terminal of the VM and run the same two commands as before.</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/engine-codelab
+<p>If they do not load, open the terminal of the VM and run the same two commands you used to start the lab, this time without <code>--info</code>.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">cd ~/heropa-fhir-engine-codelab
 ./lab-init.sh
 </code></pre>
 </li>
@@ -205,11 +211,11 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
   Password   The same as before.
   Your code  Kept as you left it.
 </code></pre>
-<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app</strong>.</p>
+<p>When the VM came back with a different IP address, the summary says <code>CHANGED</code> and shows the old address. The address in this example is a placeholder. Close the old Editor and App preview tabs, because they no longer work, and so do bookmarks to them. Open the new <strong>Editor</strong> address from the top of the summary, enter the password, and click <strong>Open app preview</strong>.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">Since the last run
   Address    CHANGED. It was https://203-0-113-10.sslip.io
-             Close the old Editor and App tabs. They no longer work. Open
-             the two addresses above.
+             Close the old Editor and App preview tabs. They no longer work.
+             Open the two addresses above.
   Password   The same as before.
   Your code  Kept as you left it.
 </code></pre>
@@ -222,7 +228,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </thead>
 <tbody>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Editor and App addresses</td>
+<td style="border: 1px solid #333; padding: 8px;">Editor and App preview addresses</td>
 <td style="border: 1px solid #333; padding: 8px;">Normally the same. The summary says <code>CHANGED</code> when they are not.</td>
 </tr>
 <tr>
@@ -239,18 +245,22 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
-<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App tab, so the app and the server agree again.</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Build log and Output</td>
-<td style="border: 1px solid #333; padding: 8px;">Start empty, and fill again at the next build and the next <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Build log</td>
+<td style="border: 1px solid #333; padding: 8px;">Starts empty, and fills again at the next build</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">Output</td>
+<td style="border: 1px solid #333; padding: 8px;">Keeps its earlier entries when the address is the same. A new address starts it empty, and it fills again at the next <strong>Sync</strong>.</td>
 </tr>
 </tbody>
 </table>
-<p>The command is safe to run at any time and as often as you like. It changes nothing when the address is the same. It always waits for the FHIR server to answer, which takes up to two minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
+<p>The command is safe to run at any time and as often as you like. When the address is the same your code, password and addresses stay as they were. Reload any tab that stopped for a moment. It always waits for the FHIR server to answer, which takes up to three minutes after a restart. When the address changed it also gets a certificate for the new address.</p>
 <p>Always copy the addresses from the summary. They are made from the IP address of the VM, normally with dashes instead of dots and <code>.sslip.io</code> at the end, so an example IP of <code>203.0.113.10</code> would give <code>https://203-0-113-10.sslip.io/ide/</code>. Sometimes the summary shows the plain IP, such as <code>https://203.0.113.10/ide/</code>, with a note that says why. Those addresses work in exactly the same way.</p>
 <h3>If the lab starts in reduced mode</h3>
-<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the summary from <code>./lab-init.sh</code> opens with the words <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
+<p>The Editor needs a certificate that your browser trusts. The lab asks for one each time the address changes. Occasionally it cannot get one, usually because the service that issues them is over its limit. The lab then makes its own certificate and starts in <strong>reduced mode</strong>, and the first line of the summary from <code>./lab-init.sh</code> says <code>REDUCED MODE</code>. It also gives the reason, the pages to use, and when to try again.</p>
 <p>Your code, the build and the app all work in reduced mode. Two things are different.</p>
 <ol>
 <li>Your browser shows a warning page the first time you open the Editor address. Click <strong>Advanced</strong>, then <strong>Proceed</strong>. You do this once. The warning appears because the lab made its own certificate, and it is expected here.</li>
@@ -274,7 +284,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Output area in the Editor</td>
-<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;">The <strong>Output</strong> strip along the bottom of the App preview tab</td>
 </tr>
 </tbody>
 </table>
@@ -314,10 +324,11 @@ HAPI FHIR server in our codelab for the app to connect to.</p>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>iosApp</code></td>
-<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/iosMain</code>.</td>
+<td style="border: 1px solid #333; padding: 8px;">Xcode project for iOS. It shows <code>App()</code> through <code>MainViewController()</code> in <code>shared/src/iosMain</code>.</td>
 </tr>
 </tbody>
 </table>
+<p>The Explorer leaves out the <code>iosApp</code> folder, which the lab does not use.</p>
 <p>The platform entry points are already written for you. Everything you'll write in this codelab goes
 into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
 <ul>
@@ -332,7 +343,7 @@ into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</cod
 step of the codelab adds the code.</p>
 <p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
 <h4>To open one of the five files</h4>
-<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then <code>commonMain</code>, then the folder shown as <code>kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
 <p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
 <h3>Import the app into Android Studio</h3>
 <p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
@@ -357,13 +368,13 @@ FHIR resources are immutable. To change a resource, make a copy with <code>copy(
 <h3>Sync your project with Gradle files</h3>
 <p>There is nothing to do on the lab. Every build the lab runs reads the Gradle files again.</p>
 <h3>Run the starter app</h3>
-<p>The starter app is already running on the lab as a web page. Look at the App tab.</p>
+<p>The starter app is already running on the lab as a web page. Look at the App preview tab.</p>
 <p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
 see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
 <p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
 <p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h3>Run the app on other platforms</h3>
-<p>The lab runs the Web (Wasm) version of the app. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
+<p>The lab builds and runs the Web (Wasm) version of the app and no other. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
 <p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
 <h3>How to run the app</h3>
 <p>You do the same four things for every step of the codelab.</p>
@@ -371,9 +382,9 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <li>Change a file in the Code area.</li>
 <li>Save it with Ctrl+S, or Cmd+S on a Mac. Saving starts a build.</li>
 <li>Watch the Build log under the code. It prints <code>Building the app</code> and then, after up to a minute, <code>BUILD OK</code>.</li>
-<li>Switch to the App tab. It has reloaded automatically and shows the new version.</li>
+<li>Switch to the App preview tab. It has reloaded automatically and shows the new version.</li>
 </ol>
-<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
+<p style="border-left: 4px solid #4a90d9; background: #eef5fc; padding: 8px 12px;"><strong>Builds are automatic.</strong> The lab watches the project files. Every time you save one, it builds the app again and the App preview tab reloads. There is no Run button to press and no command to type. A change you have not saved is not built. A white dot on a file's tab marks unsaved changes, so while you see it the app does not have that change yet.</p>
 <p>If you save again while a build is running, the lab finishes that build and then runs one more, so your latest change is never missed.</p>
 <h3>Start a build yourself</h3>
 <p>You rarely need to, but you can start a build without changing a file. Do this when you are not sure a build ran, when the Build log shows nothing new after a save, or when you want to see the result of the last build again.</p>
@@ -399,7 +410,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <p>After each successful build, the Build log also prints a <strong>Still to do</strong> list of the numbered comments that are still in the code. It gets shorter as you go and is a quick way to see where you are.</p>
 <p>Some steps change more than one file. Save each file as you finish it. A build in between may fail because the other files are not done yet, and that is fine. The build after your last save is the one that counts.</p>
 <h3>When a build fails</h3>
-<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App tab keeps showing the last version that worked.</p>
+<p>If the Build log prints <code>BUILD FAILED</code>, look just above it for lines that start with <code>e</code>. Each one names the file, the line number and the problem. Under them, a <strong>What to do</strong> list explains the common ones in plain words. Fix the file and save again. The App preview tab keeps showing the last version that worked.</p>
 <h3>If you have used Android Studio</h3>
 <p>This table shows what takes the place of each thing you know.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -416,7 +427,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Click <strong>Run</strong> in the Android Studio toolbar</td>
-<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App tab. <strong>Build now</strong> does the same without a change.</td>
+<td style="border: 1px solid #333; padding: 8px;">Save the file, wait for <code>BUILD OK</code>, look at the App preview tab. <strong>Build now</strong> does the same without a change.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Select <strong>Sync Project with Gradle Files</strong></td>
@@ -444,6 +455,34 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 </tbody>
 </table>
+<h3>Two ways to put code into your file</h3>
+<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 6 also have an <strong>Insert</strong> button next to it.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Button</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Copy</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Copies the code. You then click in your file at the place the step names and paste with Ctrl+V.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Insert</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the code into your file for you, at the place the step names. It brings the file to the front and selects the new code so you can see what changed.</td>
+</tr>
+</tbody>
+</table>
+<p>Use whichever you like. The steps describe the copy and paste way in full, and <strong>Insert</strong> does the same thing in one click.</p>
+<ul>
+<li><strong>Insert</strong> does not save the file. Press Ctrl+S afterwards, as each step says, and the build starts.</li>
+<li>Ctrl+Z takes the code out again.</li>
+<li>A second click changes nothing. A message says the code is already there.</li>
+<li>If <strong>Insert</strong> cannot find the place, a message says so. This happens when an earlier step is missing or the line it looks for was changed. Use <strong>Copy</strong> then.</li>
+</ul>
+<p>A block that only shows what your file should look like has no <strong>Insert</strong> button. Step 7 has none either, so you paste that one by hand.</p>
 <h3>What this editor does not do for you</h3>
 <p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -468,7 +507,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Completes names as you type</td>
-<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code.</td>
+<td style="border: 1px solid #333; padding: 8px;">No completion. Copy and paste the code, or click <strong>Insert</strong> on the block.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Tidies indentation and removes unused imports</td>
@@ -535,7 +574,7 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 <td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App tab</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App preview tab</td>
 <td style="border: 1px solid #333; padding: 8px;">Empties the database the app keeps in your browser</td>
 </tr>
 </tbody>
@@ -599,7 +638,7 @@ only.</li>
 </li>
 <li>
 <p>Each platform calls <code>initFhirEngine</code> once at startup. The starter already has these calls.</p>
-<p>On the lab the web entry point makes the call, in <code>shared/src/wasmJsMain/kotlin/dev/ohs/fhir/codelab/Main.kt</code>. You do not change it. The lab has changed one line of that file so the app finds the FHIR server at your lab address followed by <code>/fhir/</code>. The published file says <code>http://localhost:8080/fhir/</code>, which from your browser would mean your own computer.</p>
+<p>On the lab the web entry point makes the call, in <code>shared/src/wasmJsMain/kotlin/dev/ohs/fhir/codelab/Main.kt</code>. You do not change it. The lab has changed the call in that file so the app finds the FHIR server at your lab address followed by <code>/fhir/</code>. The published file says <code>http://localhost:8080/fhir/</code>, which from your browser would mean your own computer.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">initFhirEngine(Unit, baseUrl = &quot;${pageOrigin()}/fhir/&quot;, debug = true)
 </code></pre>
 </li>
@@ -607,7 +646,7 @@ only.</li>
 <p>Get the engine anywhere with <code>FhirEngineProvider.getInstance(platformContext)</code>.</p>
 </li>
 </ol>
-<p>Now run it. Save <code>FhirEngineSetup.kt</code> with Ctrl+S, wait for <code>BUILD OK</code> in the Build log, then look at the App tab.</p>
+<p>Now run it. Save <code>FhirEngineSetup.kt</code> with Ctrl+S, wait for <code>BUILD OK</code> in the Build log, then look at the App preview tab.</p>
 <p>Now that the engine is initialized, run the app again. Instead of the <code>Hello World!</code> screen, you
 should see the patient list. The list stays empty until you sync with the server in the next
 step.</p>
@@ -695,7 +734,7 @@ implementation, which is already in the starter:</p>
 <li><strong>Desktop, Web, and iOS:</strong> <code>ForegroundSyncLauncher</code> runs <code>AppFhirSyncTask</code> with <code>runSync</code> in the
 app's coroutine. The sync stops if the app closes.</li>
 </ul>
-<p>The lab runs the web app, so this is the launcher your app uses. A sync runs only while the App tab is open. The lab has added one line to <code>ForegroundSyncLauncher.kt</code>, which prints the reason when a sync fails so that you can read it in the Output tab.</p>
+<p>The lab runs the web app, so this is the launcher your app uses. A sync runs only while the App preview tab is open. The lab has added a line to <code>ForegroundSyncLauncher.kt</code>, which prints the reason when a sync fails so that you can read it in the Output tab.</p>
 <p>On Android a different launcher keeps the sync running in the background. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> describes it.</p>
 <h3>Step 3: Start the sync</h3>
 <p>Open <code>PatientListViewModel.kt</code>. Find the
@@ -723,13 +762,13 @@ when (syncJobStatus) {
 <p>The file is in the same folder as the others. The comment is on line 95, and you can press Ctrl+F and type <code>// 5.4</code> to jump to it. Replace that one line with the block above. This part needs no new import. Save the file.</p>
 <p>Here, when the sync finishes, the app reloads all patients from the local database with
 <code>refreshPatients()</code>, which is already in the starter, and shows a message to the user.</p>
-<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App tab and click <strong>Sync</strong>.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab and click <strong>Sync</strong>.</p>
 <p>Now that everything is set up, run your app and tap <strong>Sync</strong>. If everything works correctly, you
 should see the patients from your local FHIR server being downloaded and displayed in the app.</p>
 <p>The list shows the three test patients, and the words <strong>Sync Finished</strong> appear at the bottom for a few seconds. The Output tab in the Editor shows the requests the app sent to the FHIR server and the answers it got.</p>
 <p>If nothing appears in the app after a few seconds, the sync failed. The app shows nothing in that case, so look in two places.</p>
 <ul>
-<li>The <strong>Output</strong> tab in the Editor. A red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code> gives the reason. <code>NotImplementedError</code> means a <code>TODO()</code> is still in <code>AppFhirSyncTask.kt</code>. After fixing the code, wait for the app to reload before you click <strong>Sync</strong> again.</li>
+<li>The <strong>Output</strong> tab in the Editor. A line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code> gives the reason. <code>NotImplementedError</code> means a <code>TODO()</code> is still in <code>AppFhirSyncTask.kt</code>. After fixing the code, wait for the app to reload before you click <strong>Sync</strong> again.</li>
 <li>The <strong>Still to do</strong> list in the Build log. Every <code>// 5</code> comment and every <code>TODO()</code> must be gone.</li>
 </ul>
 <p>If you would rather jump to the finished code, type <code>step 5</code> in the <strong>Terminal</strong> tab.</p>
@@ -901,10 +940,10 @@ FHIR server.</p>
 <ol>
 <li>Run your app and tap <strong>Update</strong>. You should see the address cities for patients <code>Aaron697</code> and
 <code>Abby752</code> swapped.</li>
-<li>Open your lab address followed by <code>/fhir/Patient/</code> in a browser, which is the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed. If that tab is still open, reload it. Verify that the address cities for
+<li>Open your lab address followed by <code>/fhir/Patient</code> in a browser, which is the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed. If that tab is still open, reload it. Verify that the address cities for
 patients <code>Aaron697</code> and <code>Abby752</code> are updated on the FHIR server.</li>
 </ol>
-<p>Each click on <strong>Update</strong> swaps the two cities again, so a second click puts them back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
+<p>Each click on <strong>Update</strong> swaps the two cities again, so a second click puts them back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
 <p>If you would rather jump to the finished code, type <code>step 6</code> in the <strong>Terminal</strong> tab.</p>
 <h2>7. Search for patients by name</h2>
 <p>In this step, you'll filter the patient list by the name typed in the search field.</p>
@@ -934,7 +973,7 @@ new search, so <code>showPatients</code> cancels the previous search first. Othe
 the one for the first letter, could finish last and replace the result.</p>
 <p>Run your app again. You should now be able to enter a name, or part of a name, in the search field
 to filter the list of patients.</p>
-<p>On the lab, click in the <strong>Search by name</strong> field of the App tab and type <code>Abby</code>. The list shrinks to the one patient with that name. The search reads the database in your browser and sends nothing to the server, so nothing new appears in the Output tab.</p>
+<p>On the lab, click in the <strong>Search by name</strong> field of the App preview tab and type <code>Abby</code>. The list shrinks to the one patient with that name. The search reads the database in your browser and sends nothing to the server, so nothing new appears in the Output tab.</p>
 <p>If you would rather jump to the finished code, type <code>step 7</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the list filtered by name, on an Android phone.</p>
 <p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
@@ -980,11 +1019,11 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 <td style="border: 1px solid #333; padding: 8px;">Check the file's tab for a white dot, which means it is not saved yet. Then click <strong>Build now</strong> at the very bottom of the Editor, or type <code>build</code> in the <strong>Terminal</strong> tab.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The App tab says the app is still building</td>
+<td style="border: 1px solid #333; padding: 8px;">The App preview tab says the app is still building</td>
 <td style="border: 1px solid #333; padding: 8px;">Wait for <code>BUILD OK</code> in the Build log. The page reloads automatically.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The App tab did not change after a build</td>
+<td style="border: 1px solid #333; padding: 8px;">The App preview tab did not change after a build</td>
 <td style="border: 1px solid #333; padding: 8px;">Check that <strong>Auto refresh</strong> is ticked, or click <strong>Refresh</strong>. If it still shows the old version, check that the Build log says <code>BUILD OK</code> and not <code>BUILD FAILED</code>.</td>
 </tr>
 <tr>
@@ -1013,10 +1052,10 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a red line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App tab and try again.</td>
+<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 502 or 503 after <strong>Sync</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 503 after <strong>Sync</strong></td>
 <td style="border: 1px solid #333; padding: 8px;">The FHIR server is still starting. Wait a minute and click <strong>Sync</strong> again.</td>
 </tr>
 <tr>
@@ -1025,7 +1064,7 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
-<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App tab, then <strong>Sync</strong>.</td>
+<td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App preview tab, then <strong>Sync</strong>.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>
@@ -1033,19 +1072,19 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The app stays blank or never leaves its loading state</td>
-<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
+<td style="border: 1px solid #333; padding: 8px;">Use a current Chrome, Edge, Brave, Firefox or Safari in an ordinary window, not a private one. Then click <strong>Clear app data</strong>.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Nothing appears in the Output tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> after the app has reloaded. Step 4 must be built for anything to print. The App preview tab and the Editor must also be open in the same browser, because the output travels between them through that browser.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The Guide, Build log or Output area is gone</td>
 <td style="border: 1px solid #333; padding: 8px;">Click its name in the bar at the very bottom of the Editor.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><strong>Open app</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App</strong> address that <code>./lab-init.sh</code> printed.</td>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Open app preview</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">The browser blocked the new tab. Allow pop-ups for the lab address, or open the <strong>App preview</strong> address that <code>./lab-init.sh</code> printed.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The code is in a state you cannot fix</td>
@@ -1057,10 +1096,10 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">You came back and the tabs do not load</td>
-<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
+<td style="border: 1px solid #333; padding: 8px;">The VM was stopped. Start it in Heropa, wait two to three minutes for the FHIR server and reload the tabs. Then click <strong>Clear app data</strong> and <strong>Sync</strong>, because the server starts again from the three test patients. If they still do not load, run <code>./lab-init.sh</code> in its terminal and read <strong>Since the last run</strong> in what it prints. When that says <code>CHANGED</code>, open the new addresses. See <em>Find your addresses again</em>.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">The Editor or App address stopped working</td>
+<td style="border: 1px solid #333; padding: 8px;">The Editor or App preview address stopped working</td>
 <td style="border: 1px solid #333; padding: 8px;">The same cause and the same fix as the row above.</td>
 </tr>
 <tr>

@@ -12,8 +12,8 @@
 // leaves the manual its full height.
 //
 // The app is not shown inside the editor, because a fourth pane left too
-// little room for each. The App button in the status bar opens it in a
-// browser tab of its own. Other buttons there bring back a pane that was
+// little room for each. The Open app preview button in the status bar opens
+// it in a browser tab of its own. Other buttons there bring back a pane that was
 // closed.
 //
 // The lab can also run in reduced mode, which lab-init.sh picks when it could
@@ -25,6 +25,7 @@
 const vscode = require('vscode');
 const fs = require('fs');
 const { execFile } = require('child_process');
+const insert = require('./insert');
 
 const GUIDE = process.env.CODELAB_GUIDE || '/opt/codelab/guide/course-manual.md';
 const APP_FILE = (process.env.CODELAB_DIR || '') + '/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/FhirEngineSetup.kt';
@@ -241,7 +242,9 @@ function activate(context) {
       },
     }),
   );
-  statusButton(context, '$(link-external) Open app', 'Open the app you are building in a new browser tab', 'codelab.openApp', 103);
+  insert.register(context);
+
+  statusButton(context, '$(link-external) Open app preview', 'Open the app you are building in a new browser tab', 'codelab.openApp', 103);
   statusButton(context, '$(play) Build now', 'Save every file and build the app now', 'codelab.buildNow', 102.5);
   statusButton(context, '$(book) Guide', 'Show the codelab guide', 'codelab.showGuide', 102);
   const where = REDUCED ? ' in a new browser tab' : '';
@@ -258,6 +261,10 @@ function activate(context) {
         'Your code, the build and the app work as usual.',
     );
   }
+
+  // The Markdown preview asks for this to let the extension mark the code
+  // blocks that get an Insert button.
+  return { extendMarkdownIt: insert.extendMarkdownIt };
 }
 
 module.exports = { activate, deactivate() {} };

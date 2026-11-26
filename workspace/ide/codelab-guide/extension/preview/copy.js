@@ -1,4 +1,7 @@
-// Adds a Copy button to every code block in the rendered manual.
+// Adds a Copy button to every code block in the rendered manual, and an
+// Insert button to the blocks the extension marked. Insert is a link to a
+// signal file. The preview opens it, and the extension then puts the code
+// into the learner's file. See insert.js.
 //
 // The Markdown preview that ships with the editor has no such button. This
 // script runs inside the preview, where the extension registers it. It runs
@@ -58,6 +61,21 @@
       });
       pre.classList.add('codelab-has-copy');
       pre.appendChild(button);
+
+      const marked = pre.matches('[data-codelab-insert]') ? pre : pre.querySelector('[data-codelab-insert]');
+      if (!marked) continue;
+      const link = document.createElement('a');
+      link.className = 'codelab-copy codelab-insert';
+      link.textContent = 'Insert';
+      link.title = 'Put this code into your file, at the place this step names';
+      link.setAttribute('href', marked.getAttribute('data-codelab-insert'));
+      link.setAttribute('role', 'button');
+      link.addEventListener('click', () => {
+        link.classList.add('codelab-copied');
+        setTimeout(() => link.classList.remove('codelab-copied'), 1800);
+      });
+      pre.classList.add('codelab-has-insert');
+      pre.appendChild(link);
     }
   }
 

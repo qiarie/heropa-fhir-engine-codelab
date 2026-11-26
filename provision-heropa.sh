@@ -7,8 +7,9 @@
 # image and pulls the four other images the lab uses. The workspace image holds
 # everything else, which is the JDK, the codelab checkout, a warm Gradle cache
 # and the editor. Nothing else is installed on the VM itself, and Android
-# Studio and the Android SDK are not needed. Every step is guarded, so a second
-# run changes nothing.
+# Studio and the Android SDK are not needed. A second run is safe. It installs
+# nothing twice, and it only applies system updates and builds the image
+# again, which is quick when nothing changed.
 #
 # Run it from this folder on the VM with
 #
@@ -158,7 +159,7 @@ build_images() {
     done
 
     # The build clones the codelab, downloads every dependency and compiles the
-    # app twice, so the first run takes around ten minutes. Later runs come
+    # app twice, so the first run takes around fifteen minutes. Later runs come
     # from the layer cache.
     log "building the workspace image"
     docker build -t engine-codelab-workspace:local "$SCRIPT_DIR/workspace"

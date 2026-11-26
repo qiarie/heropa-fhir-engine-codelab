@@ -98,7 +98,7 @@ while true; do
     rule
     if [[ "$status" -eq 0 ]]; then
         status ok
-        printf '%s  \033[1;32mBUILD OK\033[0m  The App tab reloads automatically.\n' "$(date '+%H:%M:%S')"
+        printf '%s  \033[1;32mBUILD OK\033[0m  The App preview tab reloads automatically.\n' "$(date '+%H:%M:%S')"
         still_to_do
     else
         printf '%s  \033[1;31mBUILD FAILED\033[0m  The lines starting with e above name the file, the line and the problem.\n' "$(date '+%H:%M:%S')"
