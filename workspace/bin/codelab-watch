@@ -13,7 +13,7 @@ cd "$CODELAB_DIR"
 
 TASK=":shared:wasmJsBrowserDevelopmentExecutableDistribution"
 SRC_DIR="shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
-FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt RegistrationScreen.kt EngineWorkflowRepository.kt)
 # A build starts when this file exists. The watches below create it after a
 # save, and the build command creates it on request.
 STATUS_DIR="$HOME/.codelab"
@@ -55,19 +55,22 @@ rule() { printf '%s\n' "--------------------------------------------------------
 # in AppFhirSyncTask, which stops the sync. The build cannot report those, so
 # this does after each good build.
 still_to_do() {
-    local name file found=0 line
+    local name file found=0 line rows=""
     for name in "${FILES[@]}"; do
         file="$SRC_DIR/$name"
         [[ -f "$file" ]] || continue
         while IFS= read -r line; do
-            if (( ! found )); then
-                printf '\033[1;33mStill to do\033[0m\n'
-                found=1
-            fi
-            printf ' %-28s %s\n' "$name" "$line"
+            rows+="${line%% *}"$'\t'"$name"$'\t'"$line"$'\n'
         done < <(grep -oE '// [0-9.]+ Replace .*|TODO\(\)' "$file" | sed -E 's|^// ||' | awk '!seen[$0]++' \
-                    | sed -E 's|^TODO\(\)$|a function still says TODO(), which is step 5.2|')
+                    | sed -E 's|^TODO\(\)$|5.2 A function still says TODO()|')
     done
+    if [[ -n "$rows" ]]; then
+        found=1
+        printf '\033[1;33mStill to do\033[0m\n'
+        # In the order of the steps. The step number leads each row for the sort.
+        printf '%s' "$rows" | sort -s -t $'\t' -V -k1,1 \
+            | while IFS=$'\t' read -r _ name line; do printf ' %-28s %s\n' "$name" "$line"; done
+    fi
     if (( found )); then
         printf 'The app runs, but the steps above are not in it yet.\n'
     else

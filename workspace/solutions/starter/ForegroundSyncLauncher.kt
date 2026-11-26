@@ -38,8 +38,10 @@ class ForegroundSyncLauncher(private val taskFactory: () -> FhirSyncTask) : Sync
         taskFactory().runSync(taskName = null) { send(CurrentSyncJobStatus.Running(it)) }
       } catch (e: CancellationException) {
         throw e
-      } catch (e: Exception) {
-        // Printed so the reason shows in the Output tab of the lab. The app shows nothing.
+      } catch (e: Throwable) {
+        // Throwable, not Exception: on Web, a request that can't reach the server throws
+        // kotlin.Error, which would otherwise cancel the app's coroutine scope.
+        // Printed so the reason shows in the Output tab of the lab.
         println("Sync failed. $e")
         SyncJobStatus.Failed(listOf())
       }

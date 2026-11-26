@@ -2,8 +2,8 @@
 #
 # Jumps the codelab to the end of a step, for anyone who falls behind.
 #
-#   step 4 | 5 | 6 | 7    put the five codelab files in the state they have at
-#                         the end of that step
+#   step 4 to step 11     put the seven codelab files in the state they have
+#                         at the end of that step
 #   step reset            go back to the starter code
 #
 # The files it replaces are copied to ~/backups first.
@@ -12,11 +12,12 @@ set -euo pipefail
 
 SOLUTIONS=/opt/codelab/solutions
 SRC_DIR="$CODELAB_DIR/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
-FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt RegistrationScreen.kt EngineWorkflowRepository.kt)
 
 usage() {
     echo "Use one of these."
-    echo "  step 4        step 5        step 6        step 7        step reset"
+    echo "  step 4    step 5    step 6    step 7    step 8    step 9    step 10    step 11"
+    echo "  step reset"
     exit 1
 }
 
@@ -30,7 +31,7 @@ backup() {
 }
 
 case "${1:-}" in
-    4|5|6|7)
+    4|5|6|7|8|9|10|11)
         backup
         for f in "${FILES[@]}"; do
             cp "$SOLUTIONS/step-$1/$f" "$SRC_DIR/$f"

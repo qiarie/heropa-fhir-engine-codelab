@@ -1,0 +1,38 @@
+<h2>9. Save the registered patient</h2>
+<p>In this step, you'll turn the answers into a FHIR Patient and save it in the local database.
+Turning answers into FHIR resources is called
+<a href="https://hl7.org/fhir/uv/sdc/STU4/extraction.html">data extraction</a>. The questionnaire contains a
+Patient template, and the <code>TemplateExtractionEngine</code> class of Kotlin FHIR Data Capture fills it in
+with the answers.</p>
+<p>Open <code>PatientListViewModel.kt</code>. Make the two changes below in order.</p>
+<p>Replace line 36 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 9 Imports for saving the patient
+import dev.ohs.fhir.datacapture.extraction.template.TemplateExtractionEngine
+import dev.ohs.fhir.model.r4.Questionnaire
+import kotlinx.serialization.json.Json
+</code></pre>
+<p>Copy the second line exactly. This file needs the FHIR resource named <code>Questionnaire</code>, not the form you imported in step 8.</p>
+<p>In <code>registerPatient()</code>, find the
+<code>// 9 Replace with code from the codelab to extract and save the patient.</code> comment and replace it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 9 Extract and save the patient
+val questionnaire = Json.decodeFromString&lt;Questionnaire&gt;(questionnaireJson)
+val bundle = TemplateExtractionEngine.extract(questionnaire, questionnaireResponse)
+val extracted = bundle.entry.firstNotNullOf { it.resource as? Patient }
+val patientId = fhirEngine.create(extracted).first()
+val patient = extracted.copy(id = patientId)
+</code></pre>
+<p>The comment is on line 155 now that the imports are in. Press Ctrl+F and type <code>// 9 Replace</code> to jump to it, and replace that one line with the block above. Leave the <code>// 11</code> comment under it for step 11. Save the file.</p>
+<ul>
+<li><code>Json.decodeFromString()</code> turns the questionnaire JSON into a Kotlin FHIR <code>Questionnaire</code>.</li>
+<li><code>TemplateExtractionEngine.extract()</code> returns a transaction Bundle with the extracted resources.
+For this questionnaire, the Bundle holds one Patient.</li>
+<li><code>fhirEngine.create()</code> saves the patient in the local database. The extracted patient has no
+ID, so the engine creates one and returns it. You'll use the patient with its ID in step 11.</li>
+</ul>
+<p>The starter already runs <code>registerPatient()</code> in a coroutine. If the code fails, it shows the error
+as a message. When the code finishes, it reloads the patient list.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and register a patient. The new patient appears in the list, unless the search field filters it out. Tap <strong>Sync</strong> to upload
+it, then open your lab address followed by <code>/fhir/Patient</code> in a browser to see it on the FHIR server.</p>
+<p>If you would rather jump to the finished code, type <code>step 9</code> in the <strong>Terminal</strong> tab.</p>

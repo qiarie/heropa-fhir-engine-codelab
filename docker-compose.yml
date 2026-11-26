@@ -39,8 +39,8 @@ services:
       # The learner manual, which the editor shows beside the code. It is
       # mounted so an edit needs a restart of this container and no rebuild.
       - ./course-manual.md:/opt/codelab/guide/course-manual.md:ro
-      # The test patients, which the reset-server helper loads again.
-      - ./hapi/patients.json:/opt/codelab/patients.json:ro
+      # The test data, which the reset-server helper loads again.
+      - ./hapi:/opt/codelab/data:ro
 
   # The FHIR server, with the database built into the image. It is reached
   # only through nginx, at /fhir/ on the lab address.
@@ -54,11 +54,21 @@ services:
       # engine follows those links when a download has more than one page.
       hapi.fhir.use_apache_address_strategy: "true"
       hapi.fhir.use_apache_address_strategy_https: ${LAB_FHIR_HTTPS:-true}
+      # A search is answered from the database every time. With the default
+      # the server reuses an earlier answer for a minute, so a sync straight
+      # after the test data loads could miss it.
+      hapi.fhir.reuse_cached_search_results_millis: 0
+      # These two let reset-server empty the database before it loads the
+      # test data. The server refuses that request unless both are on.
+      hapi.fhir.expunge_enabled: "true"
+      hapi.fhir.allow_multiple_delete: "true"
       JAVA_TOOL_OPTIONS: -Xmx1g
 
-  # Loads the test patients whenever the server is up and does not have them.
-  # It keeps checking, because the server may come back empty after the VM
-  # was stopped, and nothing else would load them again.
+  # Loads the test data whenever the server is up and does not have it. That
+  # is the three test patients, and the PlanDefinition with its two
+  # ActivityDefinitions that step 10 downloads. It keeps checking, because the
+  # server may come back empty after the VM was stopped, and nothing else
+  # would load the data again.
   seed:
     image: curlimages/curl:8.11.1
     container_name: engine-seed
@@ -66,17 +76,20 @@ services:
     depends_on:
       - hapi
     volumes:
-      - ./hapi/patients.json:/data/patients.json:ro
+      - ./hapi:/data:ro
     entrypoint:
       - sh
       - -c
       - |
         while true; do
           if curl -sf -o /dev/null http://hapi:8080/fhir/metadata; then
-            if ! curl -sf -o /dev/null http://hapi:8080/fhir/Patient/codelab-aaron-brekke; then
-              curl -sf -o /dev/null -X POST -H "Content-Type: application/fhir+json" \
-                --data-binary @/data/patients.json http://hapi:8080/fhir/ \
-                && echo "Loaded the test patients"
+            if ! curl -sf -o /dev/null http://hapi:8080/fhir/Patient/codelab-aaron-brekke \
+              || ! curl -sf -o /dev/null http://hapi:8080/fhir/PlanDefinition/patient-registration; then
+              for file in /data/*.json; do
+                curl -sf -o /dev/null -X POST -H "Content-Type: application/fhir+json" \
+                  --data-binary @$$file http://hapi:8080/fhir/ \
+                  && echo "Loaded $$file"
+              done
             fi
             sleep 20
           else

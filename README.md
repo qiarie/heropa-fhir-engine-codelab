@@ -14,7 +14,7 @@ Each learner gets one VM running four containers.
 |---|---|
 | `engine-workspace` | Holds the JDK, the codelab checkout, a warm Gradle cache and code-server, which is VS Code in a browser. A watcher rebuilds the app after every save. |
 | `engine-hapi` | The HAPI FHIR server, with the database built into its image. It is not published on the VM. |
-| `engine-seed` | Loads the three test patients whenever the server is up and does not have them. |
+| `engine-seed` | Loads the test data whenever the server is up and does not have it. That is the three test patients, and the PlanDefinition with its two ActivityDefinitions. |
 | `engine-nginx` | The only published service. It terminates HTTPS and gives each part of the lab a path. |
 
 | Path | What the learner sees |
@@ -53,14 +53,16 @@ Only HAPI FHIR is taken from the OHS Player stack. There is no Keycloak, gateway
 |---|---|
 | Image | `hapiproject/hapi:v8.12.0-2`, the version the codelab's own compose file uses |
 | Address | `/fhir/` on the lab address. The app and the server share one address, so the browser needs no cross site rules. |
-| Access | Open, with no password. Anyone who knows a VM's address can read and write to it while the lab runs. It holds three made up patients and must never hold real data. |
+| Access | Open, with no password. Anyone who knows a VM's address can read and write to it while the lab runs. It holds three made up patients, plus whatever learners register, and must never hold real data. |
 | Links | HAPI is told to build the links inside a Bundle from the forwarded headers nginx sends, so they carry the lab address. |
 | Memory | The heap is limited to 1 GB. |
 | Data | Kept in memory, with no volume. See the next paragraph. |
+| Search cache | Off, as in the codelab's own compose file. With the default the server reuses a search answer for a minute, so a sync straight after the test data loads could miss it. |
+| Expunge and multiple delete | Both on, so `reset-server` can empty the database. The server refuses that request unless both are. |
 
-The image's default database lives in memory, so the server starts empty every time its container starts, which includes every restart of the VM. That is why the seeder keeps running. It checks every 20 seconds and loads `hapi/patients.json` whenever the first test patient is missing. A learner who comes back after an idle stop therefore finds the three patients in their first state, while their browser may still hold changed copies. The manual's Troubleshooting table tells them to click **Clear app data** and then **Sync**.
+The image's default database lives in memory, so the server starts empty every time its container starts, which includes every restart of the VM. That is why the seeder keeps running. It checks every 20 seconds and loads every file in `hapi/` whenever the first test patient or the PlanDefinition is missing. A learner who comes back after an idle stop therefore finds the three patients in their first state, while their browser may still hold changed copies. The manual's Troubleshooting table tells them to click **Clear app data** and then **Sync**.
 
-`hapi/patients.json` is a copy of `codelabs/data/patients.json` from the pinned commit.
+`hapi/patients.json` and `hapi/registration-plan.json` are copies of the two files in `codelabs/data/` at the pinned commit. The second holds the PlanDefinition and the two ActivityDefinitions that step 10 downloads.
 
 ### The database in the browser
 
@@ -103,8 +105,8 @@ The image build changes three things in the starter code and commits them, so `s
 | Change | File | Why |
 |---|---|---|
 | The FHIR server address is read from the page's own address | `shared/src/wasmJsMain/kotlin/dev/ohs/fhir/codelab/Main.kt` | The published file says `http://localhost:8080/fhir/`, which in a learner's browser is their own computer |
-| Numbered import comments, such as `// 5.2 Imports for the sync task` | `FhirEngineSetup.kt`, `DownloadWorkManagerImpl.kt`, `AppFhirSyncTask.kt` and `PatientListViewModel.kt` | The published starter marks each place for code with a numbered comment but has none for imports |
-| The exception a failed sync throws is printed, as a line that starts with `Sync failed` | `ForegroundSyncLauncher.kt` | The published file swallows it, and the app shows nothing when a sync fails |
+| Numbered import comments, such as `// 5.2 Imports for the sync task` | `FhirEngineSetup.kt`, `DownloadWorkManagerImpl.kt`, `AppFhirSyncTask.kt`, `PatientListViewModel.kt`, `RegistrationScreen.kt` and `EngineWorkflowRepository.kt` | The published starter marks each place for code with a numbered comment but has none for imports |
+| The exception a failed sync throws is printed, as a line that starts with `Sync failed` | `ForegroundSyncLauncher.kt` | The published file drops it, and the app shows only `Sync Failed` with no reason |
 
 The same commit adds one build setting, `kotlin.incremental.wasm=true`, to `codelabs/gradle.properties`. A build after a small edit then rebuilds only what the edit changed, which on a test machine with 16 cores took about 13 seconds where it took about 38 before. Kotlin 2.3.21 marks the setting as experimental. If a build ever leaves a stale app in the App preview tab, remove that line from the image build in `workspace/Dockerfile` and build the image again.
 
@@ -114,11 +116,11 @@ The editor colours Kotlin but has no code completion, no import prompts and no e
 |---|---|
 | Build hints | After a failed build, the Build log prints a **What to do** list that names the missing or wrong import in plain words. `workspace/bin/codelab-hints` holds the rules. |
 | `build` | Starts a build without a save. The build watcher runs it, so it shows in the build log like any other. A **Build now** button in the status bar saves every open file and then runs it. |
-| Still to do | After a good build, the Build log lists every numbered codelab comment and every `TODO()` still in the five files. A `TODO()` left in `AppFhirSyncTask.kt` builds without error and only fails when the learner clicks **Sync**, so the build alone cannot report it. The Output tab then shows `NotImplementedError`, and the preview page adds a line saying which step to finish. |
-| `fix-imports` | Adds the imports the code in the five files needs and repairs the `String` import. A **Fix imports** button in the status bar runs it. |
-| `step N` | Replaces the five files with a working version of step N, from 4 to 7. |
-| `step reset` | Puts the five files back to the starter code. |
-| `reset-server` | Loads the three test patients into the FHIR server again. |
+| Still to do | After a good build, the Build log lists every numbered codelab comment and every `TODO()` still in the seven files. A `TODO()` left in `AppFhirSyncTask.kt` builds without error and only fails when the learner clicks **Sync**, so the build alone cannot report it. The Output tab then shows `NotImplementedError`, and the preview page adds a line saying which step to finish. |
+| `fix-imports` | Adds the imports the code in the seven files needs and repairs the `String` and `Questionnaire` imports. A **Fix imports** button in the status bar runs it. |
+| `step N` | Replaces the seven files with a working version of step N, from 4 to 11. |
+| `step reset` | Puts the seven files back to the starter code. |
+| `reset-server` | Empties the FHIR server and loads the test data again. |
 
 The most common mistake is importing `dev.ohs.fhir.model.r4.String` in step 6 without `as FhirString`. The FHIR type and Kotlin's own `String` share that name. The manual has a part on this, named "What this editor does not do for you".
 
@@ -131,9 +133,10 @@ The most common mistake is importing `dev.ohs.fhir.model.r4.String` in step 6 wi
 | `.env.example` | Every setting with its options and default. `lab-init.sh` copies its values into `.env` on the first run. |
 | `docker-compose.yml` | The four containers and the volume that holds the learner's work |
 | `hapi/patients.json` | The three test patients |
+| `hapi/registration-plan.json` | The PlanDefinition and the two ActivityDefinitions for steps 10 and 11 |
 | `workspace/Dockerfile` | The workspace image, pinned to one commit of the codelab |
 | `workspace/bin/` | The build watcher, the build hints, the `build`, `build-log`, `fix-imports`, `step` and `reset-server` helpers and the container entry point |
-| `workspace/solutions/` | The five codelab files as they stand at the end of steps 4 to 7, and the lab's version of the starter files |
+| `workspace/solutions/` | The seven codelab files as they stand at the end of steps 4 to 11, and the lab's version of the starter files |
 | `workspace/ide/` | Editor settings, the shell settings for the Terminal and the small extension that lays out the code, build log and manual |
 | `nginx/` | The HTTPS and plain HTTP fronts, the path routes and the static pages, which are the start page, the app preview, the build log, the output and the waiting page |
 | `course-manual.md` | The learner manual, shaped as Heropa Sections and Exercises |
@@ -289,7 +292,7 @@ It is built on the published codelab. It keeps the codelab's explanations, steps
 Three things from those passages are kept in another form.
 
 * A link to the published codelab in the introduction, for anyone who would rather work in Android Studio
-* The five pictures, shown as plain pictures with a line that says what each one is. Four show the app on an Android phone and one shows the test patients on a FHIR server.
+* The seven pictures, shown as plain pictures with a line that says what each one is. Six show the app on an Android phone and one shows the test patients on a FHIR server.
 * One sentence saying the same code also runs on Android, iOS and Desktop, and one saying Android has its own sync launcher, each with the link
 
 The lab text adds these things the original leaves to Android Studio or to a local setup.
@@ -297,7 +300,7 @@ The lab text adds these things the original leaves to Android Studio or to a loc
 * The exact file to open and how to reach it in the Explorer, for learners who have never seen a Gradle project
 * Where each import line goes, since the web editor does not offer imports
 * The lab form of each `localhost` address
-* What to do when a sync fails, since the app itself shows nothing
+* What to do when a sync fails, since the app itself shows only `Sync Failed`
 * The **Clear app data** button and the `reset-server` command
 
 The manual maps onto Heropa content as one Section, with one Exercise for each second level heading.
@@ -311,10 +314,14 @@ The manual maps onto Heropa content as one Section, with one Exercise for each s
 | 5 | Sync data with the FHIR server |
 | 6 | Modify and upload patient data |
 | 7 | Search for patients by name |
-| 8 | Congratulations |
-| 9 | Troubleshooting |
+| 8 | Show a registration form |
+| 9 | Save the registered patient |
+| 10 | Connect the workflow library to the engine |
+| 11 | Propose tasks with the PlanDefinition |
+| 12 | Congratulations |
+| 13 | Troubleshooting |
 
-Load it as Custom content by pasting the HTML of each exercise into the source view of the Heropa editor, or publish it through GitBook and add it as External content. The five pictures load from GitHub at the pinned commit, so they need no upload.
+Load it as Custom content by pasting the HTML of each exercise into the source view of the Heropa editor, or publish it through GitBook and add it as External content. The seven pictures load from GitHub at the pinned commit, so they need no upload.
 
 The text taken from the published codelab keeps its own punctuation and line breaks. Only the text written for the lab follows this repository's prose rule.
 
@@ -468,8 +475,8 @@ There are five ways to reset, from the lightest to the heaviest. None of them re
 
 | Command or button | Where | What it resets | What it keeps |
 |---|---|---|---|
-| `step reset` | Editor terminal | The five codelab files, back to the starter | Every other file, and a copy of the replaced files in `~/backups` |
-| `reset-server` | Editor terminal | The three test patients on the FHIR server, back to their first state | Any other resource someone put on the server |
+| `step reset` | Editor terminal | The seven codelab files, back to the starter | Every other file, and a copy of the replaced files in `~/backups` |
+| `reset-server` | Editor terminal | The whole FHIR server. It is emptied and the test data is loaded again, so registered patients and their tasks are gone. | Nothing on the server |
 | **Clear app data** | Top of the App preview tab | The app's own database in that browser | The code and the server |
 | `./lab-init.sh --reset` | VM terminal | The whole learner volume and the FHIR server. The lab then starts again from the image, which takes two to three minutes. | `.env` with the password, the certificate and the images |
 | `./lab-init.sh --clean` | VM terminal | Everything `--reset` does, plus `.env`, the password and the certificate. The lab stays stopped. | The images and the `letsencrypt` folder |
@@ -483,7 +490,7 @@ reset-server
 
 Then click **Clear app data** in the App preview tab. The app rebuilds to `Hello World!` on its own.
 
-Use `./lab-init.sh --reset` when a learner changed files outside the five, or when the leftovers of the lighter route matter. No command on the VM can reach a browser, so click **Clear app data** after it as well.
+Use `./lab-init.sh --reset` when a learner changed files outside the seven, or when the leftovers of the lighter route matter. No command on the VM can reach a browser, so click **Clear app data** after it as well.
 
 Use `./lab-init.sh --clean` only before saving the VM as a template, as Step 3 describes. Do not run `./lab-init.sh` again after it, or the template carries a password and a volume.
 
@@ -493,11 +500,13 @@ Use `./lab-init.sh --clean` only before saving the VM as a template, as Step 3 d
 
 The workspace image is pinned to one commit of the codelab through `CODELAB_REF` in `workspace/Dockerfile`. The files in `workspace/solutions/` were written against that commit.
 
+The pin is `455f438a548aa5a04cfca78c57612ca382a2d15e`, which is the head of [pull request 159](https://github.com/ohs-foundation/kotlin-fhir-engine/pull/159) as it stood on 26 November 2026. That pull request adds steps 8 to 11 and was still open and under review then, so it is not on the `main` branch and its code may change before it is merged. Once it is merged, move the pin to the merge commit and follow the steps below for whatever changed in between.
+
 To move to a newer commit, do these in order.
 
 1. Change `CODELAB_REF` in `workspace/Dockerfile`.
 2. Update the files in `workspace/solutions/` to match the new codelab text. `starter/` holds the published starter files with the three lab changes described above. The image build copies them over the checkout and commits them.
-3. Copy the new `codelabs/data/patients.json` to `hapi/patients.json`, and match the HAPI image version in `docker-compose.yml` and `provision-heropa.sh` to the codelab's own compose file.
+3. Copy the files in the new `codelabs/data/` folder to `hapi/`, and match the HAPI image version in `docker-compose.yml` and `provision-heropa.sh` to the codelab's own compose file.
 4. Carry the changes in the new `codelabs/README.md` over to `course-manual.md`, keeping the lab text and leaving out the passages that apply only to Android Studio. Update the commit in the picture addresses and the repository links.
 5. Check the line numbers the manual quotes, and the names and imports in `fix-imports` and `codelab-hints`.
 6. Rebuild the image, walk the manual again and save a new template.

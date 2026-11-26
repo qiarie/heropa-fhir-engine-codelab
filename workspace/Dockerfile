@@ -10,7 +10,7 @@ ARG CODE_SERVER_VERSION=4.145.2
 ARG CODELAB_REPO=https://github.com/ohs-foundation/kotlin-fhir-engine.git
 # The commit the solution files in solutions/ were written against. Change
 # both together.
-ARG CODELAB_REF=697412d04157980fc24eb3fbb2e8e5c479b0f0ee
+ARG CODELAB_REF=455f438a548aa5a04cfca78c57612ca382a2d15e
 
 # libatomic1 is needed by the Node.js binary that the Kotlin Gradle plugin
 # downloads. Without it the Wasm build stops with exit code 127.
@@ -74,7 +74,7 @@ RUN cd "$CODELAB_DIR" \
 # pulls in is already downloaded. The starter is built last so the App preview tab
 # shows it as soon as the lab starts.
 RUN cd "$CODELAB_DIR" \
- && cp /opt/codelab/solutions/step-7/*.kt "$CODELAB_SRC/" \
+ && cp /opt/codelab/solutions/step-11/*.kt "$CODELAB_SRC/" \
  && ./gradlew --no-daemon --console=plain -q :shared:wasmJsBrowserDevelopmentExecutableDistribution \
  && git checkout -q -- . \
  && ./gradlew --no-daemon --console=plain -q :shared:wasmJsBrowserDevelopmentExecutableDistribution \

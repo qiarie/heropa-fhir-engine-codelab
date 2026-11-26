@@ -46,7 +46,7 @@ FhirEngineProvider.init(
 <li><code>baseUrl</code>: the FHIR server's base URL.</li>
 <li><code>httpLogger</code>: logs the requests to the server. The logs show up in Logcat on Android, the
 Xcode console on iOS, the terminal on Desktop and the browser console on Web.</li>
-<li><code>storageDirectory</code>: where the database is stored. Used on desktop and web only.</li>
+<li><code>storageDirectory</code>: where the database is stored. Only the Desktop entry point sets it.</li>
 <li><code>RECREATE_AT_OPEN</code>: if the database fails to open, the engine deletes it and makes a new one.</li>
 <li><code>enableEncryption = true</code> encrypts the database with SQLCipher. It is supported on Android
 only.</li>
@@ -68,7 +68,7 @@ only.</li>
 <p>Now that the engine is initialized, run the app again. Instead of the <code>Hello World!</code> screen, you
 should see the patient list. The list stays empty until you sync with the server in the next
 step.</p>
-<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons and a <strong>Search by name</strong> field. The buttons do nothing yet.</p>
+<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons, a <strong>Search by name</strong> field and a <strong>Register</strong> button in the bottom right corner. <strong>Sync</strong> and <strong>Update</strong> do nothing yet, and <strong>Register</strong> opens a screen that says the form goes here.</p>
 <p>If the Build log prints <code>BUILD FAILED</code>, read the <strong>What to do</strong> list under the errors, or click <strong>Fix imports</strong> at the bottom of the Editor. If you would rather jump to the finished code, type <code>step 4</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the empty patient list on an Android phone.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>

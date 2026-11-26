@@ -1,33 +1,48 @@
 #!/usr/bin/env bash
 #
-# Puts the three test patients on the FHIR server back to their first state.
+# Puts the FHIR server back to its first state, which is the three test
+# patients and the PlanDefinition that step 10 downloads.
 #
 # The published codelab does this by stopping and starting the server with
-# Docker Compose. In this lab the server is already running next to the
-# workspace, so loading the test patients again is enough. They have fixed
-# ids, so each one replaces the copy the server holds.
+# Docker Compose, which empties it. In this lab the server is already running
+# next to the workspace, so this empties its database and loads the test data
+# again. Patients and Tasks that the app uploaded are removed.
 #
-# The app keeps its own copy of the patients in the browser. This does not
-# touch it.
+# The app keeps its own copy of the data in the browser. This does not touch
+# it.
 
 set -euo pipefail
 
 FHIR="http://hapi:8080/fhir"
-DATA=/opt/codelab/patients.json
+DATA=/opt/codelab/data
 
-[[ -f "$DATA" ]] || { echo "Cannot find $DATA" >&2; exit 1; }
+ls "$DATA"/*.json >/dev/null 2>&1 || { echo "Cannot find the test data in $DATA" >&2; exit 1; }
 
 if ! curl -sf -m 10 -o /dev/null "$FHIR/metadata"; then
     echo "The FHIR server is not answering. It takes a minute or two to start, so try again shortly." >&2
     exit 1
 fi
 
-if curl -sf -m 60 -o /dev/null -X POST -H 'Content-Type: application/fhir+json' \
-        --data-binary "@$DATA" "$FHIR/"; then
-    echo "The three test patients are back to their first state on the FHIR server."
-    echo "The app still holds its own copy. To start it afresh as well, click"
-    echo "Clear app data  at the top of the App preview tab, then tap  Sync  in the app."
+# Emptying can fail on a server that does not allow it. The test data is
+# loaded all the same, which still puts the test patients back.
+emptied=1
+curl -sf -m 120 -o /dev/null -X POST -H 'Content-Type: application/fhir+json' \
+    --data '{"resourceType":"Parameters","parameter":[{"name":"expungeEverything","valueBoolean":true}]}' \
+    "$FHIR/\$expunge" || emptied=0
+
+for file in "$DATA"/*.json; do
+    if ! curl -sf -m 60 -o /dev/null -X POST -H 'Content-Type: application/fhir+json' \
+            --data-binary "@$file" "$FHIR/"; then
+        echo "The FHIR server refused the test data. Try again in a minute." >&2
+        exit 1
+    fi
+done
+
+if (( emptied )); then
+    echo "The FHIR server is back to its first state, with the three test patients."
 else
-    echo "The FHIR server refused the test patients. Try again in a minute." >&2
-    exit 1
+    echo "The three test patients are back to their first state on the FHIR server."
+    echo "Other patients and tasks on the server could not be removed."
 fi
+echo "The app still holds its own copy. To start it afresh as well, click"
+echo "Clear app data  at the top of the App preview tab, then tap  Sync  in the app."

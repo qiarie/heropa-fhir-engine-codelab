@@ -1,32 +1,28 @@
 <h2>7. Search for patients by name</h2>
 <p>In this step, you'll filter the patient list by the name typed in the search field.</p>
-<p>Find the <code>// 7 Replace with code from the codelab to search for patients by name.</code> comment in
-<code>searchPatientsByName</code> and replace it with the following code:</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 7 Search for patients by name
-showPatients {
-  fhirEngine
-    .search&lt;Patient&gt; {
-      if (nameQuery.isNotEmpty()) {
-        filter(
-          StringClientParam(&quot;name&quot;),
-          {
-            modifier = StringFilterModifier.CONTAINS
-            value = nameQuery
-          },
-        )
-      }
-    }
-    .map { it.resource }
+<p>Find the <code>// 7 Replace with code from the codelab to filter the patients by name.</code> comment in
+<code>refreshPatients()</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 7 Filter the patients by name
+if (nameQuery.isNotEmpty()) {
+  filter(
+    StringClientParam(&quot;name&quot;),
+    {
+      modifier = StringFilterModifier.CONTAINS
+      value = nameQuery
+    },
+  )
 }
 </code></pre>
-<p>The comment is in <code>PatientListViewModel.kt</code>, inside the <code>searchPatientsByName</code> function at the end of the file. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 7</code> to jump to it, and replace that one line with the block above. This step needs no new import, because <code>StringFilterModifier</code> came in with step 6. Save the file and wait for <code>BUILD OK</code>.</p>
-<p>Here, if <code>nameQuery</code> is not empty, the search returns only the patients whose names contain it.
-<code>showPatients</code>, which is already in the starter, shows the result. Each letter you type starts a
-new search, so <code>showPatients</code> cancels the previous search first. Otherwise an older search, such as
-the one for the first letter, could finish last and replace the result.</p>
+<p>The comment is in <code>PatientListViewModel.kt</code>, on line 85, inside the <code>refreshPatients()</code> function near the top of the class. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 7</code> to jump to it, and replace that one line with the block above. The <strong>Insert</strong> button on the block does the same in one click. Leave the <code>sort(...)</code> line above it in place. This step needs no new import, because <code>StringFilterModifier</code> came in with step 6. Save the file and wait for <code>BUILD OK</code>.</p>
+<p>Here, if <code>nameQuery</code> is not empty, the search returns only the patients whose names contain it. The
+starter already stores the text of the search field in <code>nameQuery</code> and calls <code>refreshPatients()</code>
+each time it changes. Each letter you type starts a new search, so <code>refreshPatients()</code> cancels the
+previous search first. Otherwise an older search, such as the one for the first letter, could
+finish last and replace the result. Because the filter is part of <code>refreshPatients()</code>, the list
+stays filtered after a sync too.</p>
 <p>Run your app again. You should now be able to enter a name, or part of a name, in the search field
 to filter the list of patients.</p>
 <p>On the lab, click in the <strong>Search by name</strong> field of the App preview tab and type <code>Abby</code>. The list shrinks to the one patient with that name. The search reads the database in your browser and sends nothing to the server, so nothing new appears in the Output tab.</p>
 <p>If you would rather jump to the finished code, type <code>step 7</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the list filtered by name, on an Android phone.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>

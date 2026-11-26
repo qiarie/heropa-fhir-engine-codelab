@@ -1,0 +1,85 @@
+<h2>10. Connect the workflow library to the engine</h2>
+<p>In the next step, you'll use the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-workflow">Kotlin FHIR Workflow</a> library to apply a
+PlanDefinition to each new patient. A PlanDefinition lists actions to take for a patient, and rules
+that decide which actions apply. In this step, you'll download the PlanDefinition to the device,
+and give the workflow library access to the local database.</p>
+<p>The FHIR server already has the PlanDefinition, from <code>data/registration-plan.json</code>. It has two
+actions, and each points to an ActivityDefinition that describes a Task:</p>
+<ul>
+<li><strong>First visit</strong> applies to every new patient.</li>
+<li><strong>Child health check</strong> applies only to patients under 5. Its condition is the FHIRPath
+expression <code>(Patient.birthDate + 5 years) &gt; %today</code>.</li>
+</ul>
+<p>On the lab the device is your browser, so the PlanDefinition is downloaded into the database the app keeps there.</p>
+<h3>Step 1: Download the PlanDefinition</h3>
+<p>Open <code>DownloadWorkManagerImpl.kt</code> and replace the <code>// 10.1</code> comment and the <code>urls</code> line below it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.1 Download the PlanDefinition and ActivityDefinitions too
+private val urls = ArrayDeque(listOf(&quot;Patient&quot;, &quot;PlanDefinition&quot;, &quot;ActivityDefinition&quot;))
+</code></pre>
+<p>The comment is on line 26 and the <code>urls</code> line is line 27, at the top of the class. Replace those two lines with the two above. This part needs no new import. Save the file.</p>
+<p>The next sync downloads the PlanDefinition and its ActivityDefinitions into the local database,
+next to the patients.</p>
+<h3>Step 2: Give the workflow library access to the engine</h3>
+<p>The workflow library reads and writes resources through the <code>WorkflowRepository</code> interface. In
+this codelab, the resources are in the FHIR Engine, so you'll implement the interface with the
+engine.</p>
+<p>Open <code>EngineWorkflowRepository.kt</code>. The file holds only two numbered comments, one for the imports and one for the code. Make the two changes below in order.</p>
+<p>Replace line 18 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.2 Imports for the workflow repository
+import dev.ohs.fhir.engine.FhirEngine
+import dev.ohs.fhir.engine.db.ResourceNotFoundException
+import dev.ohs.fhir.engine.search.ReferenceClientParam
+import dev.ohs.fhir.engine.search.Search
+import dev.ohs.fhir.engine.search.UriClientParam
+import dev.ohs.fhir.model.r4.Resource
+import dev.ohs.fhir.model.r4.terminologies.ResourceType
+import dev.ohs.fhir.workflow.WorkflowRepository
+</code></pre>
+<p>Replace the <code>// 10.2 Replace with code from the codelab ...</code>
+comment with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.2 Let the workflow library read and write through the FHIR Engine
+class EngineWorkflowRepository(private val fhirEngine: FhirEngine) : WorkflowRepository {
+  override suspend fun read(type: String, id: String): Resource? =
+    try {
+      fhirEngine.get(ResourceType.fromCode(type), id)
+    } catch (e: ResourceNotFoundException) {
+      null
+    }
+
+  override suspend fun create(resource: Resource): String = fhirEngine.create(resource).first()
+
+  override suspend fun update(resource: Resource) = fhirEngine.update(resource)
+
+  override suspend fun delete(type: String, id: String) =
+    fhirEngine.delete(ResourceType.fromCode(type), id)
+
+  override suspend fun searchByReferenceParam(
+    type: String,
+    param: String,
+    referenceValue: String,
+  ): List&lt;Resource&gt; =
+    fhirEngine
+      .search&lt;Resource&gt;(
+        Search(ResourceType.fromCode(type)).apply {
+          filter(ReferenceClientParam(param), { value = referenceValue })
+        }
+      )
+      .map { it.resource }
+
+  override suspend fun searchByUri(type: String, param: String, uri: String): List&lt;Resource&gt; =
+    fhirEngine
+      .search&lt;Resource&gt;(
+        Search(ResourceType.fromCode(type)).apply { filter(UriClientParam(param), { value = uri }) }
+      )
+      .map { it.resource }
+}
+</code></pre>
+<p>The comment takes two lines, which are lines 28 and 29 now that the imports are in, and they are the last two lines of the file. Replace both with the block above. Save the file.</p>
+<p>Each function uses a Data Access or Search API of the engine that you used in the earlier steps.
+The workflow library gives the resource type as a string, so these functions build a <code>Search</code> for
+that type, instead of using <code>search&lt;Patient&gt; { ... }</code>. The library finds the PlanDefinition by its
+canonical URL with <code>searchByUri</code>.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log. The app looks the same as before, because nothing uses the new class until step 11. Click <strong>Sync</strong> in the App preview tab, and the Output tab shows two more requests, one for <code>PlanDefinition</code> and one for <code>ActivityDefinition</code>.</p>
+<p>If you would rather jump to the finished code, type <code>step 10</code> in the <strong>Terminal</strong> tab.</p>

@@ -1,0 +1,59 @@
+<h2>11. Propose tasks with the PlanDefinition</h2>
+<p>In this step, you'll apply the PlanDefinition to each new patient, and save the Tasks it proposes.</p>
+<p>Open <code>PatientListViewModel.kt</code>. Make the two changes below in order.</p>
+<p>Replace line 40 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 11 Imports for proposing tasks
+import dev.ohs.fhir.model.r4.Date
+import dev.ohs.fhir.model.r4.FhirDate
+import dev.ohs.fhir.workflow.FhirOperator
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+</code></pre>
+<p>In <code>registerPatient()</code> in <code>PatientListViewModel.kt</code>, find the
+<code>// 11 Replace with code from the codelab to propose tasks for the patient.</code> comment and replace it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 11 Propose tasks for the patient
+val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+val carePlan =
+  FhirOperator(EngineWorkflowRepository(fhirEngine))
+    .generateCarePlan(
+      planDefinitionCanonical = REGISTRATION_PLAN,
+      subject = patient,
+      variables = mapOf(&quot;today&quot; to Date(value = FhirDate.fromString(today.toString()))),
+      today = today,
+    )
+val tasks =
+  carePlan.contained.filterIsInstance&lt;Task&gt;().map { it.copy(id = null, basedOn = emptyList()) }
+fhirEngine.create(*tasks.toTypedArray())
+</code></pre>
+<p>The comment is on line 168 now that the imports are in, just under the code from step 9. Press Ctrl+F and type <code>// 11 Replace</code> to jump to it, and replace that one line with the block above. Save the file.</p>
+<ul>
+<li><code>FhirOperator</code> is the entry point of the workflow library. It finds the PlanDefinition by its
+canonical URL, <code>REGISTRATION_PLAN</code>, which is already in the starter.</li>
+<li><code>generateCarePlan()</code> runs
+<a href="https://hl7.org/fhir/R4/plandefinition-operation-apply.html"><code>PlanDefinition/$apply</code></a> for the
+patient. It checks the condition of each action, and creates a Task with the intent <code>proposal</code>
+for each action that applies. It returns the Tasks inside a CarePlan, in <code>contained</code>.</li>
+<li><code>variables</code> makes <code>%today</code> available to the conditions. <code>generateCarePlan()</code> also takes
+<code>today</code>, but this version of the library doesn't pass it to the conditions, so the code passes
+today's date both ways.</li>
+<li>The Tasks come with IDs from the PlanDefinition actions, which would be the same for every
+patient. Setting <code>id</code> to <code>null</code> lets the engine create a new ID for each Task. <code>basedOn</code> points
+into the CarePlan, which the app doesn't save, so the code removes it.</li>
+<li><code>fhirEngine.create()</code> saves the Tasks in the local database.</li>
+</ul>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and tap <strong>Sync</strong>, so that the PlanDefinition is on the device. Then register a child
+born less than 5 years ago, and an adult. Type the date in the format shown in the field, for example
+dd/mm/yyyy. Each new patient shows its Tasks in the list. The child
+gets First visit and Child health check, and the adult gets only First visit.</p>
+<p>The picture below shows the patient list with the proposed tasks, on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image11.png" alt="The patient list with proposed tasks on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>Tap <strong>Sync</strong> again to upload the new patients and their Tasks. Open
+your lab address followed by <code>/fhir/Task</code> in a browser to see the Tasks on the FHIR server.</p>
+<p>If you register a patient before the PlanDefinition is downloaded, the app shows a message that
+starts with <code>Registration failed</code>. The patient is saved without Tasks. Tap <strong>Sync</strong> before you
+register the next patient.</p>
+<p>To start again with only the three test patients, type <code>reset-server</code> in the <strong>Terminal</strong> tab, click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>.</p>
+<p>If you would rather jump to the finished code, type <code>step 11</code> in the <strong>Terminal</strong> tab.</p>

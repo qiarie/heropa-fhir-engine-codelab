@@ -2,7 +2,9 @@
 <h3>What you'll build</h3>
 <p>In this codelab, you're going to build a Kotlin Multiplatform app with the Kotlin FHIR Engine. Your
 app will use the engine to download FHIR resources from a FHIR server, and upload any local changes
-to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).</p>
+to the server. You'll then add a registration form with Kotlin FHIR Data Capture, and use the Kotlin
+FHIR Workflow library to propose the first tasks for each new patient. The same code runs on
+Android, iOS, Desktop (JVM) and Web (Wasm).</p>
 <p>This lab focuses on the Web (Wasm) version. Wasm is short for WebAssembly, the format that lets the app run inside your browser. Every build on the lab produces that version only, and the other platforms are not built here.</p>
 <h3>What you'll learn</h3>
 <ul>
@@ -11,13 +13,17 @@ to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).
 <li>How to use the Sync API to download and upload FHIR resources</li>
 <li>How to use the Search API</li>
 <li>How to use the Data Access APIs to create, read, update, and delete FHIR resources locally</li>
+<li>How to show a registration form and extract a Patient from it with Kotlin FHIR Data Capture</li>
+<li>How to apply a PlanDefinition to a patient with the Kotlin FHIR Workflow library</li>
 </ul>
 <p>On the lab the HAPI FHIR server is started for you, so you skip the first of these.</p>
 <h3>What you'll need</h3>
 <p>On the lab you need only a recent version of Chrome, Edge, Brave, Firefox or Safari, in an ordinary window. The app keeps its data in the browser, which private or incognito windows may not allow.</p>
 <p>You do not need to know Kotlin. Every change is given in full, and this guide says exactly which file to open and where to put each line.</p>
 <p>This codelab is focused on the
-<a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>. Non-relevant concepts
+<a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>, with a short look at
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture">Kotlin FHIR Data Capture</a> and
+<a href="https://github.com/ohs-foundation/kotlin-fhir-workflow">Kotlin FHIR Workflow</a> at the end. Non-relevant concepts
 and code blocks are glossed over and are provided for you to simply copy and paste. If you haven't
 built a Kotlin Multiplatform app before, you can start by
 <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-create-first-app.html">creating your first Compose Multiplatform app</a>.</p>

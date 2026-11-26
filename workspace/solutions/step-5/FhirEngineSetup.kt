@@ -24,7 +24,7 @@ import dev.ohs.fhir.engine.sync.remote.HttpLogger
 
 /**
  * Initializes the FHIR Engine. [platformContext] is the application `Context` on Android and `Unit`
- * elsewhere. [storageDirectory] is used on desktop and web only.
+ * elsewhere. Only the desktop app passes [storageDirectory].
  */
 fun initFhirEngine(
   platformContext: Any,

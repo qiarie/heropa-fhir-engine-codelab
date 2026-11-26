@@ -24,31 +24,37 @@
 </table>
 <p>The Explorer leaves out the <code>iosApp</code> folder, which the lab does not use.</p>
 <p>The platform entry points are already written for you. Everything you'll write in this codelab goes
-into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
+into seven files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
 <ul>
 <li><code>FhirEngineSetup.kt</code></li>
 <li><code>DownloadWorkManagerImpl.kt</code></li>
 <li><code>AppFhirSyncTask.kt</code></li>
 <li><code>PatientListViewModel.kt</code></li>
 <li><code>PatientListScreen.kt</code></li>
+<li><code>RegistrationScreen.kt</code></li>
+<li><code>EngineWorkflowRepository.kt</code></li>
 </ul>
+<p>The registration form is in <code>shared/src/commonMain/composeResources/files/questionnaire.json</code>.</p>
 <p>Each place you'll change is marked with a numbered comment, such as
 <code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> The number tells you which
 step of the codelab adds the code.</p>
 <p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
-<h4>To open one of the five files</h4>
-<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<h4>To open one of the seven files</h4>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All seven sit side by side in that folder. Each file you open gets its own tab above the code.</p>
 <p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
 <h3>Import the app into Android Studio</h3>
 <p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
-<h3>The Kotlin FHIR Engine dependency</h3>
-<p>For your convenience, the Kotlin FHIR Engine dependencies have already been added to the
+<h3>The library dependencies</h3>
+<p>For your convenience, the Kotlin FHIR Engine, Data Capture and Workflow dependencies have already
+been added to the
 <code>commonMain</code> source set of <code>shared/build.gradle.kts</code>:</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">kotlin {
   sourceSets {
     commonMain.dependencies {
       api(&quot;dev.ohs.fhir:fhir-engine:2.0.0-alpha05&quot;)
       api(&quot;dev.ohs.fhir:fhir-model-r4:1.0.0-rc03&quot;)
+      implementation(&quot;dev.ohs.fhir:fhir-data-capture:2.0.0-alpha05&quot;)
+      implementation(&quot;dev.ohs.fhir:fhir-workflow:2.0.0-alpha01&quot;)
       // ...
     }
   }
@@ -66,7 +72,7 @@ FHIR resources are immutable. To change a resource, make a copy with <code>copy(
 <p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
 see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
 <p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h3>Run the app on other platforms</h3>
 <p>The lab builds and runs the Web (Wasm) version of the app and no other. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
 <p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
@@ -132,8 +138,8 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <td style="border: 1px solid #333; padding: 8px;">Read the <strong>Output</strong> tab in the Editor, next to the Build log</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong> or <strong>Update</strong></td>
-<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> or <strong>Update</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong>, <strong>Update</strong> or <strong>Register</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong>, <strong>Update</strong> or <strong>Register</strong></td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>http://localhost:8080/fhir/</code></td>
@@ -150,7 +156,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tbody>
 </table>
 <h3>Two ways to put code into your file</h3>
-<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 6 also have an <strong>Insert</strong> button next to it.</p>
+<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 11 also have an <strong>Insert</strong> button next to it.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -176,7 +182,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <li>A second click changes nothing. A message says the code is already there.</li>
 <li>If <strong>Insert</strong> cannot find the place, a message says so. This happens when an earlier step is missing or the line it looks for was changed. Use <strong>Copy</strong> then.</li>
 </ul>
-<p>A block that only shows what your file should look like has no <strong>Insert</strong> button. Step 7 has none either, so you paste that one by hand.</p>
+<p>A block that only shows what your file should look like has no <strong>Insert</strong> button.</p>
 <h3>What this editor does not do for you</h3>
 <p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -242,6 +248,28 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 </tbody>
 </table>
 <p>The ending <code>as FhirString</code> gives the FHIR type a second name so the two do not clash. If a file imports <code>dev.ohs.fhir.model.r4.String</code> without that ending, every <code>String</code> in the file means the FHIR one, and the build fails with errors about type mismatches. Step 6 is where this import comes in.</p>
+<p>Two different things are also both called <code>Questionnaire</code>. They never meet in one file, so neither needs a second name. Each file only has to import the right one.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">File that uses it</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Import line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The form on screen, from Kotlin FHIR Data Capture</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>RegistrationScreen.kt</code>, in step 8</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.datacapture.Questionnaire</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR resource that describes the form</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>PatientListViewModel.kt</code>, in step 9</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.model.r4.Questionnaire</code></td>
+</tr>
+</tbody>
+</table>
 <h4>Help when you are stuck</h4>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
@@ -253,19 +281,19 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 <tbody>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong> button, at the bottom of the Editor</td>
-<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the five files needs and repairs the <code>String</code> import. This is the closest thing to what Android Studio does.</td>
+<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the seven files needs and repairs the <code>String</code> and <code>Questionnaire</code> imports. This is the closest thing to what Android Studio does.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><code>step 4</code>, <code>step 5</code>, <code>step 6</code> or <code>step 7</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Replaces the five files with a working version of the code as it stands at the end of that step</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>step</code> and a number from 4 to 11, such as <code>step 8</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Replaces the seven files with a working version of the code as it stands at the end of that step</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>step reset</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Puts the five files back to the starter code</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the seven files back to the starter code</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>reset-server</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the FHIR server and loads the test data again, so it holds the three test patients in their first state</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App preview tab</td>

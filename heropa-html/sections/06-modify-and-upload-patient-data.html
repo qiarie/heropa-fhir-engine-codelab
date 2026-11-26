@@ -8,7 +8,7 @@ in <code>PatientListViewModel.kt</code>.</p>
 <p>Open <code>PatientListViewModel.kt</code>.</p>
 </li>
 <li>
-<p>Find the <code>// 6 Imports for changing patient data</code> comment on line 31, just under the import lines.</p>
+<p>Find the <code>// 6 Imports for changing patient data</code> comment on line 33, just under the import lines. Leave the <code>// 9 Imports</code> and <code>// 11 Imports</code> comments under it for later steps.</p>
 </li>
 <li>
 <p>Replace that comment with the following code.</p>
@@ -72,100 +72,66 @@ scope.launch {
   patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
   patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
 
+  refreshPatients()
   triggerOneTimeSync()
 }
 </code></pre>
 <p>The comment is in the same file, inside the <code>triggerUpdate()</code> function under the code for step 6.2. Press Ctrl+F and type <code>// 6.3</code> to jump to it, and replace that one line with the block above.</p>
-<p>After modifying the data locally, the app triggers a one-time sync to upload the changes to the
-FHIR server.</p>
-<p>Your <code>PatientListViewModel</code> class should now look like this:</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class PatientListViewModel(
-  private val fhirEngine: FhirEngine,
-  private val syncLauncher: SyncLauncher,
-  private val scope: CoroutineScope,
-) {
-  private val _pollState = MutableSharedFlow&lt;CurrentSyncJobStatus&gt;()
-  val pollState: SharedFlow&lt;CurrentSyncJobStatus&gt; = _pollState
+<p>After modifying the data locally, the app shows the change right away with <code>refreshPatients()</code>,
+even without a connection. Then it triggers a one-time sync to upload the changes to the FHIR
+server.</p>
+<p>The code you added to <code>PatientListViewModel</code> should now look like this:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">fun triggerOneTimeSync() {
+  // 5.3 Start the sync
+  scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
+}
 
-  private val _patients = MutableStateFlow&lt;List&lt;Patient&gt;&gt;(emptyList())
-  val patients: StateFlow&lt;List&lt;Patient&gt;&gt; = _patients
-
-  private var loadJob: Job? = null
-
-  init {
-    refreshPatients()
-  }
-
-  /** Loads all patients from the local database, sorted by given name. */
-  fun refreshPatients() = showPatients {
-    fhirEngine
-      .search&lt;Patient&gt; { sort(StringClientParam(&quot;given&quot;), Order.ASCENDING) }
-      .map { it.resource }
-  }
-
-  /**
-   * Shows the patients that [load] returns. Cancels the previous load, so an older search can't
-   * replace the result of a newer one.
-   */
-  private fun showPatients(load: suspend () -&gt; List&lt;Patient&gt;) {
-    loadJob?.cancel()
-    loadJob = scope.launch { _patients.value = load() }
-  }
-
-  fun triggerOneTimeSync() {
-    // 5.3 Start the sync
-    scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
-  }
-
-  // 6.1 Search for patients by city
-  private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
-    fhirEngine
-      .search&lt;Patient&gt; {
-        filter(
-          StringClientParam(&quot;address-city&quot;),
-          {
-            modifier = StringFilterModifier.MATCHES_EXACTLY
-            value = city
-          },
-        )
-      }
-      .map { it.resource }
-
-  // 6.2 Change the city of a patient
-  private fun Patient.withCity(city: String): Patient =
-    copy(
-      address =
-        address.mapIndexed { index, address -&gt;
-          if (index == 0) address.copy(city = FhirString(value = city)) else address
+// 6.1 Search for patients by city
+private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
+  fhirEngine
+    .search&lt;Patient&gt; {
+      filter(
+        StringClientParam(&quot;address-city&quot;),
+        {
+          modifier = StringFilterModifier.MATCHES_EXACTLY
+          value = city
         },
-    )
-
-  /** Swaps the city of patients in Wakefield and Taunton, then syncs the changes. */
-  fun triggerUpdate() {
-    // 6.3 Update the patients and sync
-    scope.launch {
-      val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
-      val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
-
-      patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
-      patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
-
-      triggerOneTimeSync()
+      )
     }
-  }
+    .map { it.resource }
 
-  fun searchPatientsByName(nameQuery: String) {
-    // 7 Replace with code from the codelab to search for patients by name.
+// 6.2 Change the city of a patient
+private fun Patient.withCity(city: String): Patient =
+  copy(
+    address =
+      address.mapIndexed { index, address -&gt;
+        if (index == 0) address.copy(city = FhirString(value = city)) else address
+      },
+  )
+
+/** Swaps the city of patients in Wakefield and Taunton, then syncs the changes. */
+fun triggerUpdate() {
+  // 6.3 Update the patients and sync
+  scope.launch {
+    val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
+    val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
+
+    patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
+    patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
+
+    refreshPatients()
+    triggerOneTimeSync()
   }
 }
 </code></pre>
-<p>If your class does not match, you can select it from the line <code>class PatientListViewModel(</code> to the last closing brace of the file and paste the block above over it. Then save the file and wait for <code>BUILD OK</code>.</p>
+<p>This is the part of the file from <code>triggerOneTimeSync()</code> down to <code>triggerUpdate()</code>, and the rest of the file stays as it was. Compare yours with it, then save the file and wait for <code>BUILD OK</code>.</p>
 <h3>Step 4: Test the functionality</h3>
 <ol>
-<li>Run your app and tap <strong>Update</strong>. You should see the address cities for patients <code>Aaron697</code> and
-<code>Abby752</code> swapped.</li>
+<li>Run your app. If the list is empty, tap <strong>Sync</strong> first. Then tap <strong>Update</strong>. You should see the
+address cities for <code>Aaron697 Brekke496</code> and <code>Abby752 Kuvalis369</code> swapped. Each tap of
+<strong>Update</strong> swaps them again.</li>
 <li>Open your lab address followed by <code>/fhir/Patient</code> in a browser, which is the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed. If that tab is still open, reload it. Verify that the address cities for
-patients <code>Aaron697</code> and <code>Abby752</code> are updated on the FHIR server.</li>
+<code>Aaron697 Brekke496</code> and <code>Abby752 Kuvalis369</code> are updated on the FHIR server.</li>
 </ol>
-<p>Each click on <strong>Update</strong> swaps the two cities again, so a second click puts them back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
+<p>A second click on <strong>Update</strong> puts the two cities back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
 <p>If you would rather jump to the finished code, type <code>step 6</code> in the <strong>Terminal</strong> tab.</p>

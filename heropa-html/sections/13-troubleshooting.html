@@ -32,8 +32,20 @@
 <td style="border: 1px solid #333; padding: 8px;">Step 6.1 or 6.2 is missing. Step 6.3 calls both.</td>
 </tr>
 <tr>
+<td style="border: 1px solid #333; padding: 8px;">Errors in <code>RegistrationScreen.kt</code> on the line <code>Questionnaire(</code> after step 8</td>
+<td style="border: 1px solid #333; padding: 8px;">The file imports <code>dev.ohs.fhir.model.r4.Questionnaire</code>, which is the FHIR resource. It needs <code>dev.ohs.fhir.datacapture.Questionnaire</code>. Click <strong>Fix imports</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'patient'</code> after step 11</td>
+<td style="border: 1px solid #333; padding: 8px;">Step 9 is missing. It makes the value that step 11 uses.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'EngineWorkflowRepository'</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Step 10.2 is missing. Step 11 uses the class it adds.</td>
+</tr>
+<tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>is not abstract and does not implement abstract member</code></td>
-<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code> or <code>AppFhirSyncTask</code>. Paste the whole class from the step again.</td>
+<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code>, <code>AppFhirSyncTask</code> or <code>EngineWorkflowRepository</code>, or an import is missing in that file. Click <strong>Fix imports</strong>, then compare the class with the step.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>Expecting</code> or <code>Syntax error</code></td>
@@ -44,8 +56,8 @@
 <td style="border: 1px solid #333; padding: 8px;">The build failed, or the <code>// 4 Replace</code> comment is still in <code>FhirEngineSetup.kt</code>. Read the Build log.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
+<td style="border: 1px solid #333; padding: 8px;">The app shows <strong>Sync Failed</strong>, or clicking <strong>Sync</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">Read the Output tab for a line that starts with <code>Sync failed</code>, and the <strong>Still to do</strong> list in the Build log. A line that names <code>NotImplementedError</code> means a <code>TODO()</code> is left in <code>AppFhirSyncTask.kt</code>. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 503 after <strong>Sync</strong></td>
@@ -58,6 +70,26 @@
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
 <td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App preview tab, then <strong>Sync</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Submit</strong> on the form does nothing but list fields in a dialog</td>
+<td style="border: 1px solid #333; padding: 8px;">A required answer is missing or the date is not valid. Click <strong>Fix questions</strong>, fill in the first name, the family name and the date of birth, and type the date with its slashes in the format the field shows. If the dialog lists fields you did fill in, <strong>Submit</strong> was clicked before the form had taken in the last key. Click <strong>Fix questions</strong> and then <strong>Submit</strong> again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A new patient is not in the list after <strong>Submit</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Before step 9 that is expected. After it, clear the <strong>Search by name</strong> field, which may be hiding the patient.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A message starts with <code>Registration failed</code></td>
+<td style="border: 1px solid #333; padding: 8px;">The PlanDefinition is not in the app yet. Check that step 10.1 is in the code, click <strong>Sync</strong>, then register the next patient. The patient you just registered was saved without tasks.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A new patient shows no tasks after step 11</td>
+<td style="border: 1px solid #333; padding: 8px;">The same cause as the row above. Click <strong>Sync</strong> first, then register another patient.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The tasks of a patient are gone after <strong>Clear app data</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The app does not download tasks. They are still on the FHIR server at your lab address followed by <code>/fhir/Task</code>, if you clicked <strong>Sync</strong> after registering.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>

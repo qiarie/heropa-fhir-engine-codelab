@@ -218,7 +218,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
-<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients, and anything your app uploaded is lost. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Build log</td>
@@ -268,12 +268,13 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 <h3>Start a local FHIR server with test data</h3>
 <p><a href="https://hapifhir.io/hapi-fhir/">HAPI FHIR</a> is a popular open source FHIR server. We use a local
 HAPI FHIR server in our codelab for the app to connect to.</p>
-<p>On the lab the server is already running, and three test patients are already loaded into it. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
+<p>On the lab the server is already running. Three test patients are already loaded into it, together with the PlanDefinition you'll use in step 10. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
 <p>To verify that the test data is available on the server, open the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed, which is your lab address followed by <code>/fhir/Patient</code>, in a new browser tab. You should see a FHIR Bundle as the search result with a <code>total</code> count of 3.</p>
 <p>If the page says the FHIR server is still starting, wait a minute and reload it.</p>
 <p>The picture below shows that page on a local server.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
-<p>The test patients are in <code>data/patients.json</code>, which you can open from the Explorer. To put the server back to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>The test data is in the <code>data</code> folder, which you can open from the Explorer. The patients are in <code>data/patients.json</code>. To reset the server to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">reset-server
 </code></pre>
+<p>The command empties the server and loads the test data again, so patients and tasks that your app uploaded are removed. The app keeps its own copy of the patients, so click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab after a reset.</p>
 <p>The server has no password. It holds only these made up patients, so do not put real data on it.</p>

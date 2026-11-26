@@ -250,7 +250,7 @@ function activate(context) {
   const where = REDUCED ? ' in a new browser tab' : '';
   statusButton(context, '$(tools) Build log', 'Show the build log' + where, 'codelab.showBuild', 101);
   statusButton(context, '$(output) Output', 'Show what the app printed' + where, 'codelab.showOutput', 101);
-  statusButton(context, '$(wand) Fix imports', 'Add the imports the codelab code needs, in all five files', 'codelab.fixImports', 100);
+  statusButton(context, '$(wand) Fix imports', 'Add the imports the codelab code needs, in all seven files', 'codelab.fixImports', 100);
 
   arrange({ guide: true, build: true, output: true, terminal: true });
 

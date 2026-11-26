@@ -3,17 +3,24 @@
 # Adds the imports the codelab code needs, the way Android Studio would.
 #
 # The editor in this lab does not offer imports. This looks at which codelab
-# names each of the five codelab files uses and adds the import line for each
-# one that is missing. It also removes the one import that is always wrong
-# here, which is the FHIR type String without a new name. That type shares
-# its name with Kotlin's own String, and Kotlin then picks the wrong one.
+# names each of the seven codelab files uses and adds the import line for each
+# one that is missing. It also removes the imports that are wrong here. One is
+# the FHIR type String without a new name, which shares its name with Kotlin's
+# own String. The other is the wrong one of the two things named
+# Questionnaire, which are the form on screen and the FHIR resource.
 #
 # Each file is copied to ~/backups before it is changed.
 
 set -euo pipefail
 
 SRC_DIR="$CODELAB_DIR/shared/src/commonMain/kotlin/dev/ohs/fhir/codelab"
-WRONG='import dev.ohs.fhir.model.r4.String'
+# Each entry is a file, or a star for every file, then a bar, then an import
+# line that must not be in that file, then a bar, then the reason.
+WRONG_RULES=(
+    "*|import dev.ohs.fhir.model.r4.String|It is the FHIR type, which has the same name as Kotlin's String."
+    "RegistrationScreen.kt|import dev.ohs.fhir.model.r4.Questionnaire|This file needs the form from Data Capture, which has the same name."
+    "PatientListViewModel.kt|import dev.ohs.fhir.datacapture.Questionnaire|This file needs the FHIR resource, which has the same name."
+)
 
 # Each entry is the file, then a bar, then a pattern that shows a name is in
 # use, then a bar, then the import line that name needs.
@@ -30,8 +37,28 @@ RULES=(
     'AppFhirSyncTask.kt|(^|[^A-Za-z])HttpUpdateMethod\.|import dev.ohs.fhir.engine.sync.upload.HttpUpdateMethod'
     'PatientListViewModel.kt|(^|[^A-Za-z])StringFilterModifier\.|import dev.ohs.fhir.engine.search.StringFilterModifier'
     'PatientListViewModel.kt|(^|[^A-Za-z])FhirString\(|import dev.ohs.fhir.model.r4.String as FhirString'
+    'RegistrationScreen.kt|(^|[^A-Za-z])Questionnaire\(|import dev.ohs.fhir.datacapture.Questionnaire'
+    'RegistrationScreen.kt|(^|[^A-Za-z])QuestionnaireConfig\(|import dev.ohs.fhir.datacapture.QuestionnaireConfig'
+    'RegistrationScreen.kt|scope\.launch|import kotlinx.coroutines.launch'
+    'PatientListViewModel.kt|(^|[^A-Za-z])TemplateExtractionEngine\.|import dev.ohs.fhir.datacapture.extraction.template.TemplateExtractionEngine'
+    'PatientListViewModel.kt|<Questionnaire>|import dev.ohs.fhir.model.r4.Questionnaire'
+    'PatientListViewModel.kt|(^|[^A-Za-z])Json\.|import kotlinx.serialization.json.Json'
+    'PatientListViewModel.kt|(^|[^A-Za-z])Date\(|import dev.ohs.fhir.model.r4.Date'
+    'PatientListViewModel.kt|(^|[^A-Za-z])FhirDate\.|import dev.ohs.fhir.model.r4.FhirDate'
+    'PatientListViewModel.kt|(^|[^A-Za-z])FhirOperator\(|import dev.ohs.fhir.workflow.FhirOperator'
+    'PatientListViewModel.kt|(^|[^A-Za-z])Clock\.System|import kotlin.time.Clock'
+    'PatientListViewModel.kt|(^|[^A-Za-z])TimeZone\.|import kotlinx.datetime.TimeZone'
+    'PatientListViewModel.kt|\.todayIn\(|import kotlinx.datetime.todayIn'
+    'EngineWorkflowRepository.kt|: FhirEngine\)|import dev.ohs.fhir.engine.FhirEngine'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z])ResourceNotFoundException([^A-Za-z]|$)|import dev.ohs.fhir.engine.db.ResourceNotFoundException'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z])ReferenceClientParam\(|import dev.ohs.fhir.engine.search.ReferenceClientParam'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z])Search\(|import dev.ohs.fhir.engine.search.Search'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z])UriClientParam\(|import dev.ohs.fhir.engine.search.UriClientParam'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z.])Resource([^A-Za-z]|$)|import dev.ohs.fhir.model.r4.Resource'
+    'EngineWorkflowRepository.kt|(^|[^A-Za-z])ResourceType\.|import dev.ohs.fhir.model.r4.terminologies.ResourceType'
+    'EngineWorkflowRepository.kt|: WorkflowRepository([^A-Za-z]|$)|import dev.ohs.fhir.workflow.WorkflowRepository'
 )
-FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt)
+FILES=(FhirEngineSetup.kt DownloadWorkManagerImpl.kt AppFhirSyncTask.kt PatientListViewModel.kt PatientListScreen.kt RegistrationScreen.kt EngineWorkflowRepository.kt)
 
 backup=""
 changed=0
@@ -52,10 +79,21 @@ for name in "${FILES[@]}"; do
         fi
     done
 
-    remove_wrong=0
-    grep -qxF "$WRONG" "$file" && remove_wrong=1
+    # The wrong imports this file has, one to a line, and the reason for each.
+    wrong=""
+    reasons=()
+    for rule in "${WRONG_RULES[@]}"; do
+        scope="${rule%%|*}"
+        [[ "$scope" == "*" || "$scope" == "$name" ]] || continue
+        rest="${rule#*|}"
+        line="${rest%%|*}"
+        if grep -qxF "$line" "$file"; then
+            wrong+="$line"$'\n'
+            reasons+=("$line|${rest#*|}")
+        fi
+    done
 
-    [[ "${#add[@]}" -gt 0 || "$remove_wrong" -eq 1 ]] || continue
+    [[ "${#add[@]}" -gt 0 || -n "$wrong" ]] || continue
 
     if [[ -z "$backup" ]]; then
         backup="$HOME/backups/$(date '+%Y%m%d-%H%M%S')"
@@ -73,8 +111,9 @@ for name in "${FILES[@]}"; do
     [[ -n "$anchor" ]] || anchor="$(grep -nE '^import ' "$file" | tail -n 1 | cut -d: -f1 || true)"
     [[ -n "$anchor" ]] || anchor="$(grep -nE '^package ' "$file" | head -n 1 | cut -d: -f1 || true)"
     tmp="$(mktemp)"
-    LINES="$lines" ANCHOR="${anchor:-1}" WRONG="$WRONG" REMOVE="$remove_wrong" awk '
-        !(ENVIRON["REMOVE"] == "1" && $0 == ENVIRON["WRONG"]) { print }
+    LINES="$lines" ANCHOR="${anchor:-1}" WRONG="$wrong" awk '
+        BEGIN { count = split(ENVIRON["WRONG"], list, "\n"); for (i = 1; i <= count; i++) if (list[i] != "") bad[list[i]] = 1 }
+        !($0 in bad) { print }
         NR == ENVIRON["ANCHOR"] + 0 { printf "%s", ENVIRON["LINES"] }
     ' "$file" > "$tmp"
     cat "$tmp" > "$file"
@@ -82,10 +121,10 @@ for name in "${FILES[@]}"; do
     changed=1
 
     echo "$name"
-    if (( remove_wrong )); then
-        echo "  Removed  $WRONG"
-        echo "           It is the FHIR type, which has the same name as Kotlin's String."
-    fi
+    for reason in ${reasons[@]+"${reasons[@]}"}; do
+        echo "  Removed  ${reason%%|*}"
+        echo "           ${reason#*|}"
+    done
     for line in ${add[@]+"${add[@]}"}; do
         echo "  Added    $line"
     done

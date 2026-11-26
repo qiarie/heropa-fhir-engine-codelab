@@ -146,6 +146,8 @@
   function go(index) {
     current = index;
     write(STEP_KEY, String(current));
+    write(SCROLL_KEY, current + ':0');
+    touched = true;
     apply(true);
   }
 
@@ -191,22 +193,36 @@
 
   // When the page opens, the preview scrolls to the line it showed last time.
   // With one step on screen that line may be hidden, and the view would land
-  // in the empty space under the step. So the step starts at its top, unless
-  // the reader has already begun to scroll.
+  // in the empty space under the step. The page also opens again each time
+  // an Insert button is clicked. So the place in the step is remembered here,
+  // and put back when the page opens, unless the reader has begun to scroll.
+  const SCROLL_KEY = 'codelab-guide-scroll';
   let touched = false;
-  function toTopOnOpen() {
-    if (!touched && !showAll && sections.length > 1) window.scrollTo(0, 0);
+  function savedScroll() {
+    const parts = read(SCROLL_KEY, '').split(':');
+    return parts.length === 2 && Number(parts[0]) === current ? Number(parts[1]) || 0 : 0;
   }
-  for (const name of ['wheel', 'keydown', 'mousedown', 'touchstart']) {
+  function toPlaceOnOpen() {
+    if (!touched && !showAll && sections.length > 1) window.scrollTo(0, savedScroll());
+  }
+  for (const name of ['wheel', 'keydown', 'touchstart']) {
     window.addEventListener(name, () => { touched = true; }, { capture: true, passive: true });
   }
+  let scrollTimer;
+  window.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => {
+      // Only a place the reader chose is worth keeping.
+      if (touched && !showAll) write(SCROLL_KEY, current + ':' + Math.round(window.scrollY));
+    }, 200);
+  }, { passive: true });
 
   refresh();
   window.addEventListener('vscode.markdown.updateContent', refresh);
   window.addEventListener('load', () => {
     refresh();
-    toTopOnOpen();
+    toPlaceOnOpen();
   });
-  for (const delay of [150, 600, 1500]) setTimeout(toTopOnOpen, delay);
+  for (const delay of [150, 600, 1500]) setTimeout(toPlaceOnOpen, delay);
   document.addEventListener('click', onClick, true);
 })();

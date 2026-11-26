@@ -1,0 +1,55 @@
+<h2>8. Show a registration form</h2>
+<p>In this step, you'll add a patient registration form with
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture">Kotlin FHIR Data Capture</a>. The form is
+a FHIR Questionnaire, and the library renders it for you.</p>
+<p>The starter already has what you need around the form:</p>
+<ul>
+<li>A <strong>Register</strong> button on the patient list, which opens the screen in <code>RegistrationScreen.kt</code></li>
+<li>The questionnaire in <code>shared/src/commonMain/composeResources/files/questionnaire.json</code>, which
+asks for a name, a date of birth and a patient ID. <code>RegistrationScreen</code> reads it into
+<code>questionnaireJson</code>.</li>
+<li>The Kotlin FHIR Data Capture dependency in <code>shared/build.gradle.kts</code></li>
+</ul>
+<p>Open <code>RegistrationScreen.kt</code>, which is in the same folder as the other files. Make the two changes below in order.</p>
+<p>Replace line 41 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 8 Imports for the registration form
+import dev.ohs.fhir.datacapture.Questionnaire
+import dev.ohs.fhir.datacapture.QuestionnaireConfig
+import kotlinx.coroutines.launch
+</code></pre>
+<p>Copy the first line exactly. It is the form from Data Capture, and the section &quot;One name, two meanings&quot; earlier in this guide explains why that matters.</p>
+<p>Find the
+<code>// 8 Replace with code from the codelab to display the registration form.</code> comment, delete the
+<code>Text(...)</code> line below it, and add the following code in its place:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 8 Display the registration form
+questionnaireJson?.let { questionnaireJson -&gt;
+  Questionnaire(
+    questionnaireJson = questionnaireJson,
+    config =
+      QuestionnaireConfig(showCancelButton = false, showSubmitAnywayWhenValidationFails = false),
+    onSubmit = { getQuestionnaireResponse -&gt;
+      scope.launch {
+        viewModel.registerPatient(questionnaireJson, getQuestionnaireResponse())
+        onClose()
+      }
+    },
+    onCancel = {},
+  )
+}
+</code></pre>
+<p>The comment is on line 75 now that the imports are in, and the <code>Text(...)</code> line is line 76. Replace those two lines with the block above. Save the file.</p>
+<p>The <code>Questionnaire</code> composable shows the form with a <strong>Submit</strong> button. When you tap <strong>Submit</strong>,
+<code>getQuestionnaireResponse()</code> checks the answers and returns them as a FHIR QuestionnaireResponse.
+The first name, family name and date of birth are required. If one is missing or isn't valid, the library lists it
+in a dialog and the form stays open. <code>showSubmitAnywayWhenValidationFails = false</code> removes the
+dialog's option to submit anyway. Otherwise the app
+passes the response to <code>registerPatient()</code> in the view model and goes back to the patient list.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and tap <strong>Register</strong>. Fill in the form and tap <strong>Submit</strong>. The app goes back to the
+list, but the patient isn't saved yet, because <code>registerPatient()</code> is still empty.</p>
+<p>On the lab, <strong>Register</strong> is the button in the bottom right corner of the patient list. The <strong>Back</strong> button at the top of the form returns to the list without submitting. Type the date of birth with its slashes, such as <code>15/06/1990</code>, and wait a second after the last key before you click <strong>Submit</strong>.</p>
+<p>If you would rather jump to the finished code, type <code>step 8</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the registration form on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image10.png" alt="The registration form on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>To learn more about rendering forms, follow the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture/tree/main/codelabs">Data Capture codelab</a>.</p>

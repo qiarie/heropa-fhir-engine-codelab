@@ -6,7 +6,9 @@
 <h3>What you'll build</h3>
 <p>In this codelab, you're going to build a Kotlin Multiplatform app with the Kotlin FHIR Engine. Your
 app will use the engine to download FHIR resources from a FHIR server, and upload any local changes
-to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).</p>
+to the server. You'll then add a registration form with Kotlin FHIR Data Capture, and use the Kotlin
+FHIR Workflow library to propose the first tasks for each new patient. The same code runs on
+Android, iOS, Desktop (JVM) and Web (Wasm).</p>
 <p>This lab focuses on the Web (Wasm) version. Wasm is short for WebAssembly, the format that lets the app run inside your browser. Every build on the lab produces that version only, and the other platforms are not built here.</p>
 <h3>What you'll learn</h3>
 <ul>
@@ -15,13 +17,17 @@ to the server. The same code runs on Android, iOS, Desktop (JVM) and Web (Wasm).
 <li>How to use the Sync API to download and upload FHIR resources</li>
 <li>How to use the Search API</li>
 <li>How to use the Data Access APIs to create, read, update, and delete FHIR resources locally</li>
+<li>How to show a registration form and extract a Patient from it with Kotlin FHIR Data Capture</li>
+<li>How to apply a PlanDefinition to a patient with the Kotlin FHIR Workflow library</li>
 </ul>
 <p>On the lab the HAPI FHIR server is started for you, so you skip the first of these.</p>
 <h3>What you'll need</h3>
 <p>On the lab you need only a recent version of Chrome, Edge, Brave, Firefox or Safari, in an ordinary window. The app keeps its data in the browser, which private or incognito windows may not allow.</p>
 <p>You do not need to know Kotlin. Every change is given in full, and this guide says exactly which file to open and where to put each line.</p>
 <p>This codelab is focused on the
-<a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>. Non-relevant concepts
+<a href="https://github.com/ohs-foundation/kotlin-fhir-engine">Kotlin FHIR Engine</a>, with a short look at
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture">Kotlin FHIR Data Capture</a> and
+<a href="https://github.com/ohs-foundation/kotlin-fhir-workflow">Kotlin FHIR Workflow</a> at the end. Non-relevant concepts
 and code blocks are glossed over and are provided for you to simply copy and paste. If you haven't
 built a Kotlin Multiplatform app before, you can start by
 <a href="https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-multiplatform-create-first-app.html">creating your first Compose Multiplatform app</a>.</p>
@@ -245,7 +251,7 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">FHIR server data</td>
-<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
+<td style="border: 1px solid #333; padding: 8px;">Goes back to the three test patients, and anything your app uploaded is lost. Click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab, so the app and the server agree again.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">Build log</td>
@@ -295,14 +301,15 @@ The tabs stopped loading? Run ./lab-init.sh again. It is safe at any time.
 <h3>Start a local FHIR server with test data</h3>
 <p><a href="https://hapifhir.io/hapi-fhir/">HAPI FHIR</a> is a popular open source FHIR server. We use a local
 HAPI FHIR server in our codelab for the app to connect to.</p>
-<p>On the lab the server is already running, and three test patients are already loaded into it. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
+<p>On the lab the server is already running. Three test patients are already loaded into it, together with the PlanDefinition you'll use in step 10. You run no Docker command. The server answers at your lab address followed by <code>/fhir/</code>.</p>
 <p>To verify that the test data is available on the server, open the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed, which is your lab address followed by <code>/fhir/Patient</code>, in a new browser tab. You should see a FHIR Bundle as the search result with a <code>total</code> count of 3.</p>
 <p>If the page says the FHIR server is still starting, wait a minute and reload it.</p>
 <p>The picture below shows that page on a local server.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
-<p>The test patients are in <code>data/patients.json</code>, which you can open from the Explorer. To put the server back to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image5.png" alt="The test patients as the FHIR server returns them" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>The test data is in the <code>data</code> folder, which you can open from the Explorer. The patients are in <code>data/patients.json</code>. To reset the server to them, for example to run the update step again, type this in the <strong>Terminal</strong> tab of the Editor.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">reset-server
 </code></pre>
+<p>The command empties the server and loads the test data again, so patients and tasks that your app uploaded are removed. The app keeps its own copy of the patients, so click <strong>Clear app data</strong> and then <strong>Sync</strong> in the App preview tab after a reset.</p>
 <p>The server has no password. It holds only these made up patients, so do not put real data on it.</p>
 <h2>3. Set up the project</h2>
 <h3>Project structure</h3>
@@ -330,31 +337,37 @@ HAPI FHIR server in our codelab for the app to connect to.</p>
 </table>
 <p>The Explorer leaves out the <code>iosApp</code> folder, which the lab does not use.</p>
 <p>The platform entry points are already written for you. Everything you'll write in this codelab goes
-into five files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
+into seven files in <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code>:</p>
 <ul>
 <li><code>FhirEngineSetup.kt</code></li>
 <li><code>DownloadWorkManagerImpl.kt</code></li>
 <li><code>AppFhirSyncTask.kt</code></li>
 <li><code>PatientListViewModel.kt</code></li>
 <li><code>PatientListScreen.kt</code></li>
+<li><code>RegistrationScreen.kt</code></li>
+<li><code>EngineWorkflowRepository.kt</code></li>
 </ul>
+<p>The registration form is in <code>shared/src/commonMain/composeResources/files/questionnaire.json</code>.</p>
 <p>Each place you'll change is marked with a numbered comment, such as
 <code>// 4 Replace with code from the codelab to initialize the FHIR Engine.</code> The number tells you which
 step of the codelab adds the code.</p>
 <p>A path such as <code>shared/src/commonMain/kotlin/dev/ohs/fhir/codelab/</code> tells you which folders to open in the Explorer, from left to right. Click a folder to open it, and click a file to show it in the Code area.</p>
-<h4>To open one of the five files</h4>
-<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All five sit side by side in that folder. Each file you open gets its own tab above the code.</p>
+<h4>To open one of the seven files</h4>
+<p><code>FhirEngineSetup.kt</code> is already open when the Editor starts. For the others, open <code>shared</code> in the Explorer, then <code>src</code>, then the folder shown as <code>commonMain/kotlin/dev/ohs/fhir/codelab</code>, and click the file. All seven sit side by side in that folder. Each file you open gets its own tab above the code.</p>
 <p>The same folder holds three more files, <code>App.kt</code>, <code>ForegroundSyncLauncher.kt</code> and <code>SyncLauncher.kt</code>. You do not change those.</p>
 <h3>Import the app into Android Studio</h3>
 <p>There is nothing to import on the lab. The Editor tab takes the place of Android Studio, and the project is already open in it.</p>
-<h3>The Kotlin FHIR Engine dependency</h3>
-<p>For your convenience, the Kotlin FHIR Engine dependencies have already been added to the
+<h3>The library dependencies</h3>
+<p>For your convenience, the Kotlin FHIR Engine, Data Capture and Workflow dependencies have already
+been added to the
 <code>commonMain</code> source set of <code>shared/build.gradle.kts</code>:</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">kotlin {
   sourceSets {
     commonMain.dependencies {
       api(&quot;dev.ohs.fhir:fhir-engine:2.0.0-alpha05&quot;)
       api(&quot;dev.ohs.fhir:fhir-model-r4:1.0.0-rc03&quot;)
+      implementation(&quot;dev.ohs.fhir:fhir-data-capture:2.0.0-alpha05&quot;)
+      implementation(&quot;dev.ohs.fhir:fhir-workflow:2.0.0-alpha01&quot;)
       // ...
     }
   }
@@ -372,7 +385,7 @@ FHIR resources are immutable. To change a resource, make a copy with <code>copy(
 <p>Because the FHIR Engine is not initialized yet, the app shows a <code>Hello World!</code> screen. As you can
 see there isn't much here yet, so let's get right into creating the FHIR Engine!</p>
 <p>The pictures in this guide show the app on an Android phone. The web page on the lab has the same parts and looks slightly different.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image6.png" alt="The Hello World app on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h3>Run the app on other platforms</h3>
 <p>The lab builds and runs the Web (Wasm) version of the app and no other. You do not type any command. The lab builds the app automatically every time you save a file, as the next part explains.</p>
 <p>The app is built with Kotlin Multiplatform, so the same code also runs on Android, iOS and Desktop. The <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> shows how to run it on each of them.</p>
@@ -438,8 +451,8 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <td style="border: 1px solid #333; padding: 8px;">Read the <strong>Output</strong> tab in the Editor, next to the Build log</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong> or <strong>Update</strong></td>
-<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong> or <strong>Update</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Tap <strong>Sync</strong>, <strong>Update</strong> or <strong>Register</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Click <strong>Sync</strong>, <strong>Update</strong> or <strong>Register</strong></td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>http://localhost:8080/fhir/</code></td>
@@ -456,7 +469,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 </tbody>
 </table>
 <h3>Two ways to put code into your file</h3>
-<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 6 also have an <strong>Insert</strong> button next to it.</p>
+<p>A block of code in the Guide has a <strong>Copy</strong> button in its top right corner. A block that only shows sample output has none. Many blocks in steps 4 to 11 also have an <strong>Insert</strong> button next to it.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
 <tr>
@@ -482,7 +495,7 @@ see there isn't much here yet, so let's get right into creating the FHIR Engine!
 <li>A second click changes nothing. A message says the code is already there.</li>
 <li>If <strong>Insert</strong> cannot find the place, a message says so. This happens when an earlier step is missing or the line it looks for was changed. Use <strong>Copy</strong> then.</li>
 </ul>
-<p>A block that only shows what your file should look like has no <strong>Insert</strong> button. Step 7 has none either, so you paste that one by hand.</p>
+<p>A block that only shows what your file should look like has no <strong>Insert</strong> button.</p>
 <h3>What this editor does not do for you</h3>
 <p>The web editor is simpler than Android Studio, which quietly does several jobs as you type. Read this once, because it explains most of the errors people hit.</p>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
@@ -548,6 +561,28 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 </tbody>
 </table>
 <p>The ending <code>as FhirString</code> gives the FHIR type a second name so the two do not clash. If a file imports <code>dev.ohs.fhir.model.r4.String</code> without that ending, every <code>String</code> in the file means the FHIR one, and the build fails with errors about type mismatches. Step 6 is where this import comes in.</p>
+<p>Two different things are also both called <code>Questionnaire</code>. They never meet in one file, so neither needs a second name. Each file only has to import the right one.</p>
+<table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
+<thead>
+<tr>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">What it is</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">File that uses it</th>
+<th style="border: 1px solid #333; padding: 8px; text-align: left; background: #f5f5f5;">Import line</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The form on screen, from Kotlin FHIR Data Capture</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>RegistrationScreen.kt</code>, in step 8</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.datacapture.Questionnaire</code></td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The FHIR resource that describes the form</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>PatientListViewModel.kt</code>, in step 9</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>import dev.ohs.fhir.model.r4.Questionnaire</code></td>
+</tr>
+</tbody>
+</table>
 <h4>Help when you are stuck</h4>
 <table style="border-collapse: collapse; width: 100%; margin-bottom: 16px;">
 <thead>
@@ -559,19 +594,19 @@ import dev.ohs.fhir.engine.sync.upload.UploadStrategy
 <tbody>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Fix imports</strong> button, at the bottom of the Editor</td>
-<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the five files needs and repairs the <code>String</code> import. This is the closest thing to what Android Studio does.</td>
+<td style="border: 1px solid #333; padding: 8px;">Adds every import the code in the seven files needs and repairs the <code>String</code> and <code>Questionnaire</code> imports. This is the closest thing to what Android Studio does.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;"><code>step 4</code>, <code>step 5</code>, <code>step 6</code> or <code>step 7</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Replaces the five files with a working version of the code as it stands at the end of that step</td>
+<td style="border: 1px solid #333; padding: 8px;"><code>step</code> and a number from 4 to 11, such as <code>step 8</code>, typed in the <strong>Terminal</strong> tab</td>
+<td style="border: 1px solid #333; padding: 8px;">Replaces the seven files with a working version of the code as it stands at the end of that step</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>step reset</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Puts the five files back to the starter code</td>
+<td style="border: 1px solid #333; padding: 8px;">Puts the seven files back to the starter code</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>reset-server</code>, typed in the <strong>Terminal</strong> tab</td>
-<td style="border: 1px solid #333; padding: 8px;">Puts the three test patients on the FHIR server back to their first state</td>
+<td style="border: 1px solid #333; padding: 8px;">Empties the FHIR server and loads the test data again, so it holds the three test patients in their first state</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Clear app data</strong>, at the top of the App preview tab</td>
@@ -628,7 +663,7 @@ FhirEngineProvider.init(
 <li><code>baseUrl</code>: the FHIR server's base URL.</li>
 <li><code>httpLogger</code>: logs the requests to the server. The logs show up in Logcat on Android, the
 Xcode console on iOS, the terminal on Desktop and the browser console on Web.</li>
-<li><code>storageDirectory</code>: where the database is stored. Used on desktop and web only.</li>
+<li><code>storageDirectory</code>: where the database is stored. Only the Desktop entry point sets it.</li>
 <li><code>RECREATE_AT_OPEN</code>: if the database fails to open, the engine deletes it and makes a new one.</li>
 <li><code>enableEncryption = true</code> encrypts the database with SQLCipher. It is supported on Android
 only.</li>
@@ -650,10 +685,10 @@ only.</li>
 <p>Now that the engine is initialized, run the app again. Instead of the <code>Hello World!</code> screen, you
 should see the patient list. The list stays empty until you sync with the server in the next
 step.</p>
-<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons and a <strong>Search by name</strong> field. The buttons do nothing yet.</p>
+<p>The page has a bar with <strong>Sync</strong> and <strong>Update</strong> buttons, a <strong>Search by name</strong> field and a <strong>Register</strong> button in the bottom right corner. <strong>Sync</strong> and <strong>Update</strong> do nothing yet, and <strong>Register</strong> opens a screen that says the form goes here.</p>
 <p>If the Build log prints <code>BUILD FAILED</code>, read the <strong>What to do</strong> list under the errors, or click <strong>Fix imports</strong> at the bottom of the Editor. If you would rather jump to the finished code, type <code>step 4</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the empty patient list on an Android phone.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image7.png" alt="The empty patient list on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h2>5. Sync data with the FHIR server</h2>
 <p>In this step, you'll download patients from the FHIR server into the local database, and upload
 local changes back to the server.</p>
@@ -664,20 +699,21 @@ local changes back to the server.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Import for the download manager
 import dev.ohs.fhir.model.r4.Bundle
 </code></pre>
-<p>Replace lines 29 and 30, in <code>getNextRequest()</code>, with the following code.</p>
+<p>Replace lines 30 and 31, in <code>getNextRequest()</code>, with the following code.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Return the next download request
 val url = urls.removeFirstOrNull() ?: return null
 return DownloadRequest.of(url)
 </code></pre>
-<p>Replace lines 37 and 38, in <code>processResponse()</code>, with the following code.</p>
+<p>Replace lines 38 and 39, in <code>processResponse()</code>, with the following code.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.1 Extract the resources from the response
 if (response is Bundle &amp;&amp; response.type.value == Bundle.BundleType.Searchset) {
   return response.entry.mapNotNull { it.resource }
 }
 return emptyList()
 </code></pre>
-<p>The class now looks like this. Save the file.</p>
+<p>The class now looks like this. Leave the <code>// 10.1</code> comment and the <code>urls</code> line under it as they are, because step 10 changes them. Save the file.</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class DownloadWorkManagerImpl : DownloadWorkManager {
+  // 10.1 Replace the line below with code from the codelab to download the PlanDefinition too.
   private val urls = ArrayDeque(listOf(&quot;Patient&quot;))
 
   override suspend fun getNextRequest(): DownloadRequest? {
@@ -743,7 +779,7 @@ and replace it with the following code:</p>
 <pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 5.3 Start the sync
 scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
 </code></pre>
-<p>The file is in the same folder as the others. The comment is on line 67, and you can press Ctrl+F and type <code>// 5.3</code> to jump to it. Replace that one line with the two lines above. This part needs no new import. Save the file.</p>
+<p>The file is in the same folder as the others. The comment is on line 95, and you can press Ctrl+F and type <code>// 5.3</code> to jump to it. Replace that one line with the two lines above. This part needs no new import. Save the file.</p>
 <p>This coroutine starts a one-time sync with the FHIR server, and forwards the state of the sync to
 the UI.</p>
 <h3>Step 4: Show when the sync finishes</h3>
@@ -756,24 +792,27 @@ when (syncJobStatus) {
     viewModel.refreshPatients()
     snackbarHostState.showSnackbar(&quot;Sync Finished&quot;)
   }
+  is CurrentSyncJobStatus.Failed -&gt; snackbarHostState.showSnackbar(&quot;Sync Failed&quot;)
   else -&gt; {}
 }
 </code></pre>
-<p>The file is in the same folder as the others. The comment is on line 95, and you can press Ctrl+F and type <code>// 5.4</code> to jump to it. Replace that one line with the block above. This part needs no new import. Save the file.</p>
-<p>Here, when the sync finishes, the app reloads all patients from the local database with
-<code>refreshPatients()</code>, which is already in the starter, and shows a message to the user.</p>
+<p>The file is in the same folder as the others. The comment is on line 108, and you can press Ctrl+F and type <code>// 5.4</code> to jump to it. Replace that one line with the block above. This part needs no new import. Save the file.</p>
+<p>Here, when the sync finishes, the app reloads the patients from the local database with
+<code>refreshPatients()</code>, which is already in the starter, and shows a message to the user. If the sync
+fails, for example because the FHIR server isn't running, the app shows <code>Sync Failed</code>.</p>
+<p>On the lab, check that the <strong>FHIR server</strong> address opens in your browser, then click <strong>Sync</strong> again.</p>
 <p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab and click <strong>Sync</strong>.</p>
 <p>Now that everything is set up, run your app and tap <strong>Sync</strong>. If everything works correctly, you
 should see the patients from your local FHIR server being downloaded and displayed in the app.</p>
 <p>The list shows the three test patients, and the words <strong>Sync Finished</strong> appear at the bottom for a few seconds. The Output tab in the Editor shows the requests the app sent to the FHIR server and the answers it got.</p>
-<p>If nothing appears in the app after a few seconds, the sync failed. The app shows nothing in that case, so look in two places.</p>
+<p>If the app shows <strong>Sync Failed</strong>, or nothing appears after a few seconds, look in two places.</p>
 <ul>
 <li>The <strong>Output</strong> tab in the Editor. A line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code> gives the reason. <code>NotImplementedError</code> means a <code>TODO()</code> is still in <code>AppFhirSyncTask.kt</code>. After fixing the code, wait for the app to reload before you click <strong>Sync</strong> again.</li>
 <li>The <strong>Still to do</strong> list in the Build log. Every <code>// 5</code> comment and every <code>TODO()</code> must be gone.</li>
 </ul>
 <p>If you would rather jump to the finished code, type <code>step 5</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the patient list after a sync, on an Android phone.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image8.png" alt="The patient list after a sync on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image8.png" alt="The patient list after a sync on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
 <h2>6. Modify and upload patient data</h2>
 <p>In this step, you'll swap the address cities of patients in <code>Wakefield</code> and <code>Taunton</code>, then upload
 the changes to the FHIR server. All the code in this step goes in the <code>PatientListViewModel</code> class
@@ -784,7 +823,7 @@ in <code>PatientListViewModel.kt</code>.</p>
 <p>Open <code>PatientListViewModel.kt</code>.</p>
 </li>
 <li>
-<p>Find the <code>// 6 Imports for changing patient data</code> comment on line 31, just under the import lines.</p>
+<p>Find the <code>// 6 Imports for changing patient data</code> comment on line 33, just under the import lines. Leave the <code>// 9 Imports</code> and <code>// 11 Imports</code> comments under it for later steps.</p>
 </li>
 <li>
 <p>Replace that comment with the following code.</p>
@@ -848,161 +887,370 @@ scope.launch {
   patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
   patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
 
+  refreshPatients()
   triggerOneTimeSync()
 }
 </code></pre>
 <p>The comment is in the same file, inside the <code>triggerUpdate()</code> function under the code for step 6.2. Press Ctrl+F and type <code>// 6.3</code> to jump to it, and replace that one line with the block above.</p>
-<p>After modifying the data locally, the app triggers a one-time sync to upload the changes to the
-FHIR server.</p>
-<p>Your <code>PatientListViewModel</code> class should now look like this:</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">class PatientListViewModel(
-  private val fhirEngine: FhirEngine,
-  private val syncLauncher: SyncLauncher,
-  private val scope: CoroutineScope,
-) {
-  private val _pollState = MutableSharedFlow&lt;CurrentSyncJobStatus&gt;()
-  val pollState: SharedFlow&lt;CurrentSyncJobStatus&gt; = _pollState
+<p>After modifying the data locally, the app shows the change right away with <code>refreshPatients()</code>,
+even without a connection. Then it triggers a one-time sync to upload the changes to the FHIR
+server.</p>
+<p>The code you added to <code>PatientListViewModel</code> should now look like this:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">fun triggerOneTimeSync() {
+  // 5.3 Start the sync
+  scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
+}
 
-  private val _patients = MutableStateFlow&lt;List&lt;Patient&gt;&gt;(emptyList())
-  val patients: StateFlow&lt;List&lt;Patient&gt;&gt; = _patients
-
-  private var loadJob: Job? = null
-
-  init {
-    refreshPatients()
-  }
-
-  /** Loads all patients from the local database, sorted by given name. */
-  fun refreshPatients() = showPatients {
-    fhirEngine
-      .search&lt;Patient&gt; { sort(StringClientParam(&quot;given&quot;), Order.ASCENDING) }
-      .map { it.resource }
-  }
-
-  /**
-   * Shows the patients that [load] returns. Cancels the previous load, so an older search can't
-   * replace the result of a newer one.
-   */
-  private fun showPatients(load: suspend () -&gt; List&lt;Patient&gt;) {
-    loadJob?.cancel()
-    loadJob = scope.launch { _patients.value = load() }
-  }
-
-  fun triggerOneTimeSync() {
-    // 5.3 Start the sync
-    scope.launch { syncLauncher.oneTimeSync().collect { _pollState.emit(it) } }
-  }
-
-  // 6.1 Search for patients by city
-  private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
-    fhirEngine
-      .search&lt;Patient&gt; {
-        filter(
-          StringClientParam(&quot;address-city&quot;),
-          {
-            modifier = StringFilterModifier.MATCHES_EXACTLY
-            value = city
-          },
-        )
-      }
-      .map { it.resource }
-
-  // 6.2 Change the city of a patient
-  private fun Patient.withCity(city: String): Patient =
-    copy(
-      address =
-        address.mapIndexed { index, address -&gt;
-          if (index == 0) address.copy(city = FhirString(value = city)) else address
+// 6.1 Search for patients by city
+private suspend fun searchByCity(city: String): List&lt;Patient&gt; =
+  fhirEngine
+    .search&lt;Patient&gt; {
+      filter(
+        StringClientParam(&quot;address-city&quot;),
+        {
+          modifier = StringFilterModifier.MATCHES_EXACTLY
+          value = city
         },
-    )
-
-  /** Swaps the city of patients in Wakefield and Taunton, then syncs the changes. */
-  fun triggerUpdate() {
-    // 6.3 Update the patients and sync
-    scope.launch {
-      val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
-      val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
-
-      patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
-      patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
-
-      triggerOneTimeSync()
+      )
     }
-  }
+    .map { it.resource }
 
-  fun searchPatientsByName(nameQuery: String) {
-    // 7 Replace with code from the codelab to search for patients by name.
+// 6.2 Change the city of a patient
+private fun Patient.withCity(city: String): Patient =
+  copy(
+    address =
+      address.mapIndexed { index, address -&gt;
+        if (index == 0) address.copy(city = FhirString(value = city)) else address
+      },
+  )
+
+/** Swaps the city of patients in Wakefield and Taunton, then syncs the changes. */
+fun triggerUpdate() {
+  // 6.3 Update the patients and sync
+  scope.launch {
+    val patientsFromWakefield = searchByCity(&quot;Wakefield&quot;)
+    val patientsFromTaunton = searchByCity(&quot;Taunton&quot;)
+
+    patientsFromWakefield.forEach { fhirEngine.update(it.withCity(&quot;Taunton&quot;)) }
+    patientsFromTaunton.forEach { fhirEngine.update(it.withCity(&quot;Wakefield&quot;)) }
+
+    refreshPatients()
+    triggerOneTimeSync()
   }
 }
 </code></pre>
-<p>If your class does not match, you can select it from the line <code>class PatientListViewModel(</code> to the last closing brace of the file and paste the block above over it. Then save the file and wait for <code>BUILD OK</code>.</p>
+<p>This is the part of the file from <code>triggerOneTimeSync()</code> down to <code>triggerUpdate()</code>, and the rest of the file stays as it was. Compare yours with it, then save the file and wait for <code>BUILD OK</code>.</p>
 <h3>Step 4: Test the functionality</h3>
 <ol>
-<li>Run your app and tap <strong>Update</strong>. You should see the address cities for patients <code>Aaron697</code> and
-<code>Abby752</code> swapped.</li>
+<li>Run your app. If the list is empty, tap <strong>Sync</strong> first. Then tap <strong>Update</strong>. You should see the
+address cities for <code>Aaron697 Brekke496</code> and <code>Abby752 Kuvalis369</code> swapped. Each tap of
+<strong>Update</strong> swaps them again.</li>
 <li>Open your lab address followed by <code>/fhir/Patient</code> in a browser, which is the <strong>FHIR server</strong> address that <code>./lab-init.sh</code> printed. If that tab is still open, reload it. Verify that the address cities for
-patients <code>Aaron697</code> and <code>Abby752</code> are updated on the FHIR server.</li>
+<code>Aaron697 Brekke496</code> and <code>Abby752 Kuvalis369</code> are updated on the FHIR server.</li>
 </ol>
-<p>Each click on <strong>Update</strong> swaps the two cities again, so a second click puts them back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
+<p>A second click on <strong>Update</strong> puts the two cities back. To return the server to its first state at any time, type <code>reset-server</code> in the <strong>Terminal</strong> tab. Then click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>, so the app holds the same data as the server again.</p>
 <p>If you would rather jump to the finished code, type <code>step 6</code> in the <strong>Terminal</strong> tab.</p>
 <h2>7. Search for patients by name</h2>
 <p>In this step, you'll filter the patient list by the name typed in the search field.</p>
-<p>Find the <code>// 7 Replace with code from the codelab to search for patients by name.</code> comment in
-<code>searchPatientsByName</code> and replace it with the following code:</p>
-<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 7 Search for patients by name
-showPatients {
-  fhirEngine
-    .search&lt;Patient&gt; {
-      if (nameQuery.isNotEmpty()) {
-        filter(
-          StringClientParam(&quot;name&quot;),
-          {
-            modifier = StringFilterModifier.CONTAINS
-            value = nameQuery
-          },
-        )
-      }
-    }
-    .map { it.resource }
+<p>Find the <code>// 7 Replace with code from the codelab to filter the patients by name.</code> comment in
+<code>refreshPatients()</code> and replace it with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 7 Filter the patients by name
+if (nameQuery.isNotEmpty()) {
+  filter(
+    StringClientParam(&quot;name&quot;),
+    {
+      modifier = StringFilterModifier.CONTAINS
+      value = nameQuery
+    },
+  )
 }
 </code></pre>
-<p>The comment is in <code>PatientListViewModel.kt</code>, inside the <code>searchPatientsByName</code> function at the end of the file. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 7</code> to jump to it, and replace that one line with the block above. This step needs no new import, because <code>StringFilterModifier</code> came in with step 6. Save the file and wait for <code>BUILD OK</code>.</p>
-<p>Here, if <code>nameQuery</code> is not empty, the search returns only the patients whose names contain it.
-<code>showPatients</code>, which is already in the starter, shows the result. Each letter you type starts a
-new search, so <code>showPatients</code> cancels the previous search first. Otherwise an older search, such as
-the one for the first letter, could finish last and replace the result.</p>
+<p>The comment is in <code>PatientListViewModel.kt</code>, on line 85, inside the <code>refreshPatients()</code> function near the top of the class. Press Ctrl+F, or Cmd+F on a Mac, and type <code>// 7</code> to jump to it, and replace that one line with the block above. The <strong>Insert</strong> button on the block does the same in one click. Leave the <code>sort(...)</code> line above it in place. This step needs no new import, because <code>StringFilterModifier</code> came in with step 6. Save the file and wait for <code>BUILD OK</code>.</p>
+<p>Here, if <code>nameQuery</code> is not empty, the search returns only the patients whose names contain it. The
+starter already stores the text of the search field in <code>nameQuery</code> and calls <code>refreshPatients()</code>
+each time it changes. Each letter you type starts a new search, so <code>refreshPatients()</code> cancels the
+previous search first. Otherwise an older search, such as the one for the first letter, could
+finish last and replace the result. Because the filter is part of <code>refreshPatients()</code>, the list
+stays filtered after a sync too.</p>
 <p>Run your app again. You should now be able to enter a name, or part of a name, in the search field
 to filter the list of patients.</p>
 <p>On the lab, click in the <strong>Search by name</strong> field of the App preview tab and type <code>Abby</code>. The list shrinks to the one patient with that name. The search reads the database in your browser and sends nothing to the server, so nothing new appears in the Output tab.</p>
 <p>If you would rather jump to the finished code, type <code>step 7</code> in the <strong>Terminal</strong> tab.</p>
 <p>The picture below shows the list filtered by name, on an Android phone.</p>
-<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/697412d04157980fc24eb3fbb2e8e5c479b0f0ee/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
-<h2>8. Congratulations!</h2>
-<p style="border-left: 4px solid #2e7d32; background: #e8f5e9; padding: 8px 12px;">You have used the Kotlin FHIR Engine to manage FHIR resources in your app:</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image9.png" alt="The patient list filtered by name on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<h2>8. Show a registration form</h2>
+<p>In this step, you'll add a patient registration form with
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture">Kotlin FHIR Data Capture</a>. The form is
+a FHIR Questionnaire, and the library renders it for you.</p>
+<p>The starter already has what you need around the form:</p>
+<ul>
+<li>A <strong>Register</strong> button on the patient list, which opens the screen in <code>RegistrationScreen.kt</code></li>
+<li>The questionnaire in <code>shared/src/commonMain/composeResources/files/questionnaire.json</code>, which
+asks for a name, a date of birth and a patient ID. <code>RegistrationScreen</code> reads it into
+<code>questionnaireJson</code>.</li>
+<li>The Kotlin FHIR Data Capture dependency in <code>shared/build.gradle.kts</code></li>
+</ul>
+<p>Open <code>RegistrationScreen.kt</code>, which is in the same folder as the other files. Make the two changes below in order.</p>
+<p>Replace line 41 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 8 Imports for the registration form
+import dev.ohs.fhir.datacapture.Questionnaire
+import dev.ohs.fhir.datacapture.QuestionnaireConfig
+import kotlinx.coroutines.launch
+</code></pre>
+<p>Copy the first line exactly. It is the form from Data Capture, and the section &quot;One name, two meanings&quot; earlier in this guide explains why that matters.</p>
+<p>Find the
+<code>// 8 Replace with code from the codelab to display the registration form.</code> comment, delete the
+<code>Text(...)</code> line below it, and add the following code in its place:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 8 Display the registration form
+questionnaireJson?.let { questionnaireJson -&gt;
+  Questionnaire(
+    questionnaireJson = questionnaireJson,
+    config =
+      QuestionnaireConfig(showCancelButton = false, showSubmitAnywayWhenValidationFails = false),
+    onSubmit = { getQuestionnaireResponse -&gt;
+      scope.launch {
+        viewModel.registerPatient(questionnaireJson, getQuestionnaireResponse())
+        onClose()
+      }
+    },
+    onCancel = {},
+  )
+}
+</code></pre>
+<p>The comment is on line 75 now that the imports are in, and the <code>Text(...)</code> line is line 76. Replace those two lines with the block above. Save the file.</p>
+<p>The <code>Questionnaire</code> composable shows the form with a <strong>Submit</strong> button. When you tap <strong>Submit</strong>,
+<code>getQuestionnaireResponse()</code> checks the answers and returns them as a FHIR QuestionnaireResponse.
+The first name, family name and date of birth are required. If one is missing or isn't valid, the library lists it
+in a dialog and the form stays open. <code>showSubmitAnywayWhenValidationFails = false</code> removes the
+dialog's option to submit anyway. Otherwise the app
+passes the response to <code>registerPatient()</code> in the view model and goes back to the patient list.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and tap <strong>Register</strong>. Fill in the form and tap <strong>Submit</strong>. The app goes back to the
+list, but the patient isn't saved yet, because <code>registerPatient()</code> is still empty.</p>
+<p>On the lab, <strong>Register</strong> is the button in the bottom right corner of the patient list. The <strong>Back</strong> button at the top of the form returns to the list without submitting. Type the date of birth with its slashes, such as <code>15/06/1990</code>, and wait a second after the last key before you click <strong>Submit</strong>.</p>
+<p>If you would rather jump to the finished code, type <code>step 8</code> in the <strong>Terminal</strong> tab.</p>
+<p>The picture below shows the registration form on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image10.png" alt="The registration form on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>To learn more about rendering forms, follow the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-data-capture/tree/main/codelabs">Data Capture codelab</a>.</p>
+<h2>9. Save the registered patient</h2>
+<p>In this step, you'll turn the answers into a FHIR Patient and save it in the local database.
+Turning answers into FHIR resources is called
+<a href="https://hl7.org/fhir/uv/sdc/STU4/extraction.html">data extraction</a>. The questionnaire contains a
+Patient template, and the <code>TemplateExtractionEngine</code> class of Kotlin FHIR Data Capture fills it in
+with the answers.</p>
+<p>Open <code>PatientListViewModel.kt</code>. Make the two changes below in order.</p>
+<p>Replace line 36 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 9 Imports for saving the patient
+import dev.ohs.fhir.datacapture.extraction.template.TemplateExtractionEngine
+import dev.ohs.fhir.model.r4.Questionnaire
+import kotlinx.serialization.json.Json
+</code></pre>
+<p>Copy the second line exactly. This file needs the FHIR resource named <code>Questionnaire</code>, not the form you imported in step 8.</p>
+<p>In <code>registerPatient()</code>, find the
+<code>// 9 Replace with code from the codelab to extract and save the patient.</code> comment and replace it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 9 Extract and save the patient
+val questionnaire = Json.decodeFromString&lt;Questionnaire&gt;(questionnaireJson)
+val bundle = TemplateExtractionEngine.extract(questionnaire, questionnaireResponse)
+val extracted = bundle.entry.firstNotNullOf { it.resource as? Patient }
+val patientId = fhirEngine.create(extracted).first()
+val patient = extracted.copy(id = patientId)
+</code></pre>
+<p>The comment is on line 155 now that the imports are in. Press Ctrl+F and type <code>// 9 Replace</code> to jump to it, and replace that one line with the block above. Leave the <code>// 11</code> comment under it for step 11. Save the file.</p>
+<ul>
+<li><code>Json.decodeFromString()</code> turns the questionnaire JSON into a Kotlin FHIR <code>Questionnaire</code>.</li>
+<li><code>TemplateExtractionEngine.extract()</code> returns a transaction Bundle with the extracted resources.
+For this questionnaire, the Bundle holds one Patient.</li>
+<li><code>fhirEngine.create()</code> saves the patient in the local database. The extracted patient has no
+ID, so the engine creates one and returns it. You'll use the patient with its ID in step 11.</li>
+</ul>
+<p>The starter already runs <code>registerPatient()</code> in a coroutine. If the code fails, it shows the error
+as a message. When the code finishes, it reloads the patient list.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and register a patient. The new patient appears in the list, unless the search field filters it out. Tap <strong>Sync</strong> to upload
+it, then open your lab address followed by <code>/fhir/Patient</code> in a browser to see it on the FHIR server.</p>
+<p>If you would rather jump to the finished code, type <code>step 9</code> in the <strong>Terminal</strong> tab.</p>
+<h2>10. Connect the workflow library to the engine</h2>
+<p>In the next step, you'll use the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-workflow">Kotlin FHIR Workflow</a> library to apply a
+PlanDefinition to each new patient. A PlanDefinition lists actions to take for a patient, and rules
+that decide which actions apply. In this step, you'll download the PlanDefinition to the device,
+and give the workflow library access to the local database.</p>
+<p>The FHIR server already has the PlanDefinition, from <code>data/registration-plan.json</code>. It has two
+actions, and each points to an ActivityDefinition that describes a Task:</p>
+<ul>
+<li><strong>First visit</strong> applies to every new patient.</li>
+<li><strong>Child health check</strong> applies only to patients under 5. Its condition is the FHIRPath
+expression <code>(Patient.birthDate + 5 years) &gt; %today</code>.</li>
+</ul>
+<p>On the lab the device is your browser, so the PlanDefinition is downloaded into the database the app keeps there.</p>
+<h3>Step 1: Download the PlanDefinition</h3>
+<p>Open <code>DownloadWorkManagerImpl.kt</code> and replace the <code>// 10.1</code> comment and the <code>urls</code> line below it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.1 Download the PlanDefinition and ActivityDefinitions too
+private val urls = ArrayDeque(listOf(&quot;Patient&quot;, &quot;PlanDefinition&quot;, &quot;ActivityDefinition&quot;))
+</code></pre>
+<p>The comment is on line 26 and the <code>urls</code> line is line 27, at the top of the class. Replace those two lines with the two above. This part needs no new import. Save the file.</p>
+<p>The next sync downloads the PlanDefinition and its ActivityDefinitions into the local database,
+next to the patients.</p>
+<h3>Step 2: Give the workflow library access to the engine</h3>
+<p>The workflow library reads and writes resources through the <code>WorkflowRepository</code> interface. In
+this codelab, the resources are in the FHIR Engine, so you'll implement the interface with the
+engine.</p>
+<p>Open <code>EngineWorkflowRepository.kt</code>. The file holds only two numbered comments, one for the imports and one for the code. Make the two changes below in order.</p>
+<p>Replace line 18 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.2 Imports for the workflow repository
+import dev.ohs.fhir.engine.FhirEngine
+import dev.ohs.fhir.engine.db.ResourceNotFoundException
+import dev.ohs.fhir.engine.search.ReferenceClientParam
+import dev.ohs.fhir.engine.search.Search
+import dev.ohs.fhir.engine.search.UriClientParam
+import dev.ohs.fhir.model.r4.Resource
+import dev.ohs.fhir.model.r4.terminologies.ResourceType
+import dev.ohs.fhir.workflow.WorkflowRepository
+</code></pre>
+<p>Replace the <code>// 10.2 Replace with code from the codelab ...</code>
+comment with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 10.2 Let the workflow library read and write through the FHIR Engine
+class EngineWorkflowRepository(private val fhirEngine: FhirEngine) : WorkflowRepository {
+  override suspend fun read(type: String, id: String): Resource? =
+    try {
+      fhirEngine.get(ResourceType.fromCode(type), id)
+    } catch (e: ResourceNotFoundException) {
+      null
+    }
+
+  override suspend fun create(resource: Resource): String = fhirEngine.create(resource).first()
+
+  override suspend fun update(resource: Resource) = fhirEngine.update(resource)
+
+  override suspend fun delete(type: String, id: String) =
+    fhirEngine.delete(ResourceType.fromCode(type), id)
+
+  override suspend fun searchByReferenceParam(
+    type: String,
+    param: String,
+    referenceValue: String,
+  ): List&lt;Resource&gt; =
+    fhirEngine
+      .search&lt;Resource&gt;(
+        Search(ResourceType.fromCode(type)).apply {
+          filter(ReferenceClientParam(param), { value = referenceValue })
+        }
+      )
+      .map { it.resource }
+
+  override suspend fun searchByUri(type: String, param: String, uri: String): List&lt;Resource&gt; =
+    fhirEngine
+      .search&lt;Resource&gt;(
+        Search(ResourceType.fromCode(type)).apply { filter(UriClientParam(param), { value = uri }) }
+      )
+      .map { it.resource }
+}
+</code></pre>
+<p>The comment takes two lines, which are lines 28 and 29 now that the imports are in, and they are the last two lines of the file. Replace both with the block above. Save the file.</p>
+<p>Each function uses a Data Access or Search API of the engine that you used in the earlier steps.
+The workflow library gives the resource type as a string, so these functions build a <code>Search</code> for
+that type, instead of using <code>search&lt;Patient&gt; { ... }</code>. The library finds the PlanDefinition by its
+canonical URL with <code>searchByUri</code>.</p>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log. The app looks the same as before, because nothing uses the new class until step 11. Click <strong>Sync</strong> in the App preview tab, and the Output tab shows two more requests, one for <code>PlanDefinition</code> and one for <code>ActivityDefinition</code>.</p>
+<p>If you would rather jump to the finished code, type <code>step 10</code> in the <strong>Terminal</strong> tab.</p>
+<h2>11. Propose tasks with the PlanDefinition</h2>
+<p>In this step, you'll apply the PlanDefinition to each new patient, and save the Tasks it proposes.</p>
+<p>Open <code>PatientListViewModel.kt</code>. Make the two changes below in order.</p>
+<p>Replace line 40 with the following code.</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 11 Imports for proposing tasks
+import dev.ohs.fhir.model.r4.Date
+import dev.ohs.fhir.model.r4.FhirDate
+import dev.ohs.fhir.workflow.FhirOperator
+import kotlin.time.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+</code></pre>
+<p>In <code>registerPatient()</code> in <code>PatientListViewModel.kt</code>, find the
+<code>// 11 Replace with code from the codelab to propose tasks for the patient.</code> comment and replace it
+with the following code:</p>
+<pre style="background: #f6f8fa; border: 1px solid #ddd; padding: 12px; overflow-x: auto; white-space: pre;"><code style="white-space: pre; font-family: monospace;">// 11 Propose tasks for the patient
+val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+val carePlan =
+  FhirOperator(EngineWorkflowRepository(fhirEngine))
+    .generateCarePlan(
+      planDefinitionCanonical = REGISTRATION_PLAN,
+      subject = patient,
+      variables = mapOf(&quot;today&quot; to Date(value = FhirDate.fromString(today.toString()))),
+      today = today,
+    )
+val tasks =
+  carePlan.contained.filterIsInstance&lt;Task&gt;().map { it.copy(id = null, basedOn = emptyList()) }
+fhirEngine.create(*tasks.toTypedArray())
+</code></pre>
+<p>The comment is on line 168 now that the imports are in, just under the code from step 9. Press Ctrl+F and type <code>// 11 Replace</code> to jump to it, and replace that one line with the block above. Save the file.</p>
+<ul>
+<li><code>FhirOperator</code> is the entry point of the workflow library. It finds the PlanDefinition by its
+canonical URL, <code>REGISTRATION_PLAN</code>, which is already in the starter.</li>
+<li><code>generateCarePlan()</code> runs
+<a href="https://hl7.org/fhir/R4/plandefinition-operation-apply.html"><code>PlanDefinition/$apply</code></a> for the
+patient. It checks the condition of each action, and creates a Task with the intent <code>proposal</code>
+for each action that applies. It returns the Tasks inside a CarePlan, in <code>contained</code>.</li>
+<li><code>variables</code> makes <code>%today</code> available to the conditions. <code>generateCarePlan()</code> also takes
+<code>today</code>, but this version of the library doesn't pass it to the conditions, so the code passes
+today's date both ways.</li>
+<li>The Tasks come with IDs from the PlanDefinition actions, which would be the same for every
+patient. Setting <code>id</code> to <code>null</code> lets the engine create a new ID for each Task. <code>basedOn</code> points
+into the CarePlan, which the app doesn't save, so the code removes it.</li>
+<li><code>fhirEngine.create()</code> saves the Tasks in the local database.</li>
+</ul>
+<p>Now run it. Wait for <code>BUILD OK</code> in the Build log, then go to the App preview tab.</p>
+<p>Run the app and tap <strong>Sync</strong>, so that the PlanDefinition is on the device. Then register a child
+born less than 5 years ago, and an adult. Type the date in the format shown in the field, for example
+dd/mm/yyyy. Each new patient shows its Tasks in the list. The child
+gets First visit and Child health check, and the adult gets only First visit.</p>
+<p>The picture below shows the patient list with the proposed tasks, on an Android phone.</p>
+<p><img src="https://raw.githubusercontent.com/ohs-foundation/kotlin-fhir-engine/455f438a548aa5a04cfca78c57612ca382a2d15e/codelabs/images/image11.png" alt="The patient list with proposed tasks on an Android phone" style="max-width: 100%; height: auto; border: 1px solid #ddd;" /></p>
+<p>Tap <strong>Sync</strong> again to upload the new patients and their Tasks. Open
+your lab address followed by <code>/fhir/Task</code> in a browser to see the Tasks on the FHIR server.</p>
+<p>If you register a patient before the PlanDefinition is downloaded, the app shows a message that
+starts with <code>Registration failed</code>. The patient is saved without Tasks. Tap <strong>Sync</strong> before you
+register the next patient.</p>
+<p>To start again with only the three test patients, type <code>reset-server</code> in the <strong>Terminal</strong> tab, click <strong>Clear app data</strong> in the App preview tab and click <strong>Sync</strong>.</p>
+<p>If you would rather jump to the finished code, type <code>step 11</code> in the <strong>Terminal</strong> tab.</p>
+<h2>12. Congratulations!</h2>
+<p style="border-left: 4px solid #2e7d32; background: #e8f5e9; padding: 8px 12px;">You have used the Kotlin FHIR Engine to manage FHIR resources in your app, together with Kotlin
+FHIR Data Capture and Kotlin FHIR Workflow:</p>
 <ul>
 <li>Use the Sync API to sync FHIR resources with a FHIR server</li>
 <li>Use the Data Access API to create, read, update, and delete local FHIR resources</li>
 <li>Use the Search API to search local FHIR resources</li>
+<li>Show a FHIR Questionnaire and extract a Patient from the answers</li>
+<li>Apply a PlanDefinition to a patient to propose Tasks</li>
 </ul>
 <h3>What we've covered</h3>
 <ul>
 <li>How to run a local HAPI FHIR server with test data</li>
 <li>How to add the Kotlin FHIR Engine to your Kotlin Multiplatform app</li>
 <li>How to use the Sync API, Data Access API, and Search API of the Kotlin FHIR Engine</li>
+<li>How to register patients with Kotlin FHIR Data Capture and save them with the engine</li>
+<li>How to connect Kotlin FHIR Workflow to the engine and run <code>PlanDefinition/$apply</code></li>
 </ul>
 <h3>Next steps</h3>
 <ul>
 <li>Run the codelab on the other platforms: Desktop, Web and iOS</li>
-<li>Download other resource types by adding them to the <code>urls</code> queue in <code>DownloadWorkManagerImpl</code></li>
+<li>Download the Tasks too, by adding <code>Task</code> to the <code>urls</code> queue in <code>DownloadWorkManagerImpl</code>, so
+that Tasks created on another device show up</li>
+<li>Move a proposed Task through its lifecycle with <code>ActivityFlow</code> in the
+<a href="https://github.com/ohs-foundation/kotlin-fhir-workflow">Kotlin FHIR Workflow</a> library</li>
 <li>Add periodic sync. See <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/tree/main/engine-app"><code>engine-app</code></a>
 for an example on every platform.</li>
-<li>Explore the Search API. The <a href="https://github.com/ohs-foundation/kotlin-fhir-engine/blob/main/docs/conformance.md">conformance</a>
-document lists the supported search parameter types, modifiers and prefixes.</li>
+<li>Explore the Search API.
+<a href="https://ohs-foundation.github.io/ohs-docs/fhir-foundations/kotlin-fhir-engine/persist-and-search/">Search the local store</a>
+describes the search parameter types, modifiers and prefixes.</li>
 </ul>
 <p>The other platforms need tools the lab does not have. To try them, follow the <a href="https://ohs-foundation.github.io/ohs-docs/tutorials-and-codelabs/engine/">published codelab</a> on your own computer. Here are some things you can try on the lab.</p>
 <ul>
 <li>In step 7, change <code>StringFilterModifier.CONTAINS</code> to <code>StringFilterModifier.STARTS_WITH</code>, save, and search for <code>by</code></li>
 <li>In <code>PatientListViewModel.kt</code>, change <code>Order.ASCENDING</code> to <code>Order.DESCENDING</code> in <code>refreshPatients()</code>, save, and click <strong>Sync</strong></li>
+<li>Add <code>&quot;Task&quot;</code> to the <code>urls</code> list in <code>DownloadWorkManagerImpl.kt</code>, save, click <strong>Clear app data</strong> and then <strong>Sync</strong>, and see the tasks you uploaded come back</li>
 <li>Click <strong>Update</strong>, then read the Output tab to see the request the app sent to the server for the two changed patients</li>
 </ul>
 <h2>Troubleshooting</h2>
@@ -1039,8 +1287,20 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 <td style="border: 1px solid #333; padding: 8px;">Step 6.1 or 6.2 is missing. Step 6.3 calls both.</td>
 </tr>
 <tr>
+<td style="border: 1px solid #333; padding: 8px;">Errors in <code>RegistrationScreen.kt</code> on the line <code>Questionnaire(</code> after step 8</td>
+<td style="border: 1px solid #333; padding: 8px;">The file imports <code>dev.ohs.fhir.model.r4.Questionnaire</code>, which is the FHIR resource. It needs <code>dev.ohs.fhir.datacapture.Questionnaire</code>. Click <strong>Fix imports</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'patient'</code> after step 11</td>
+<td style="border: 1px solid #333; padding: 8px;">Step 9 is missing. It makes the value that step 11 uses.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><code>Unresolved reference 'EngineWorkflowRepository'</code></td>
+<td style="border: 1px solid #333; padding: 8px;">Step 10.2 is missing. Step 11 uses the class it adds.</td>
+</tr>
+<tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>is not abstract and does not implement abstract member</code></td>
-<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code> or <code>AppFhirSyncTask</code>. Paste the whole class from the step again.</td>
+<td style="border: 1px solid #333; padding: 8px;">A function was deleted from <code>DownloadWorkManagerImpl</code>, <code>AppFhirSyncTask</code> or <code>EngineWorkflowRepository</code>, or an import is missing in that file. Click <strong>Fix imports</strong>, then compare the class with the step.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><code>Expecting</code> or <code>Syntax error</code></td>
@@ -1051,8 +1311,8 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 <td style="border: 1px solid #333; padding: 8px;">The build failed, or the <code>// 4 Replace</code> comment is still in <code>FhirEngineSetup.kt</code>. Read the Build log.</td>
 </tr>
 <tr>
-<td style="border: 1px solid #333; padding: 8px;">Clicking <strong>Sync</strong> does nothing</td>
-<td style="border: 1px solid #333; padding: 8px;">The sync failed. Read the Output tab for a line that starts with <code>Sync failed</code> or names <code>NotImplementedError</code>, and the <strong>Still to do</strong> list in the Build log. A <code>TODO()</code> left in <code>AppFhirSyncTask.kt</code> is the usual cause. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
+<td style="border: 1px solid #333; padding: 8px;">The app shows <strong>Sync Failed</strong>, or clicking <strong>Sync</strong> does nothing</td>
+<td style="border: 1px solid #333; padding: 8px;">Read the Output tab for a line that starts with <code>Sync failed</code>, and the <strong>Still to do</strong> list in the Build log. A line that names <code>NotImplementedError</code> means a <code>TODO()</code> is left in <code>AppFhirSyncTask.kt</code>. If the code is right, click <strong>Refresh</strong> in the App preview tab and try again.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The Output tab shows an error with status 503 after <strong>Sync</strong></td>
@@ -1065,6 +1325,26 @@ document lists the supported search parameter types, modifiers and prefixes.</li
 <tr>
 <td style="border: 1px solid #333; padding: 8px;">The cities in the app and on the server do not match</td>
 <td style="border: 1px solid #333; padding: 8px;">The server was reset or the VM was stopped while the app kept its own copy. Click <strong>Clear app data</strong> in the App preview tab, then <strong>Sync</strong>.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;"><strong>Submit</strong> on the form does nothing but list fields in a dialog</td>
+<td style="border: 1px solid #333; padding: 8px;">A required answer is missing or the date is not valid. Click <strong>Fix questions</strong>, fill in the first name, the family name and the date of birth, and type the date with its slashes in the format the field shows. If the dialog lists fields you did fill in, <strong>Submit</strong> was clicked before the form had taken in the last key. Click <strong>Fix questions</strong> and then <strong>Submit</strong> again.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A new patient is not in the list after <strong>Submit</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">Before step 9 that is expected. After it, clear the <strong>Search by name</strong> field, which may be hiding the patient.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A message starts with <code>Registration failed</code></td>
+<td style="border: 1px solid #333; padding: 8px;">The PlanDefinition is not in the app yet. Check that step 10.1 is in the code, click <strong>Sync</strong>, then register the next patient. The patient you just registered was saved without tasks.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">A new patient shows no tasks after step 11</td>
+<td style="border: 1px solid #333; padding: 8px;">The same cause as the row above. Click <strong>Sync</strong> first, then register another patient.</td>
+</tr>
+<tr>
+<td style="border: 1px solid #333; padding: 8px;">The tasks of a patient are gone after <strong>Clear app data</strong></td>
+<td style="border: 1px solid #333; padding: 8px;">The app does not download tasks. They are still on the FHIR server at your lab address followed by <code>/fhir/Task</code>, if you clicked <strong>Sync</strong> after registering.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #333; padding: 8px;"><strong>Update</strong> changed nothing</td>

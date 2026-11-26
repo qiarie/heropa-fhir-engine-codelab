@@ -18,9 +18,35 @@ hints=()
 hint() { hints+=("$1"); }
 has() { grep -qE "$1" <<<"$errors"; }
 
-# Prints the import a codelab name needs, or nothing for any other name.
+# Prints the import a codelab name needs in the file given second, or nothing
+# for any other name. Questionnaire means the form on screen in
+# RegistrationScreen.kt and the FHIR resource everywhere else.
 import_for() {
     case "$1" in
+        Questionnaire)
+            if [[ "${2:-}" == RegistrationScreen.kt ]]; then
+                echo "import dev.ohs.fhir.datacapture.Questionnaire"
+            else
+                echo "import dev.ohs.fhir.model.r4.Questionnaire"
+            fi ;;
+        QuestionnaireConfig)         echo "import dev.ohs.fhir.datacapture.QuestionnaireConfig" ;;
+        launch)                      echo "import kotlinx.coroutines.launch" ;;
+        TemplateExtractionEngine)    echo "import dev.ohs.fhir.datacapture.extraction.template.TemplateExtractionEngine" ;;
+        Json)                        echo "import kotlinx.serialization.json.Json" ;;
+        Date)                        echo "import dev.ohs.fhir.model.r4.Date" ;;
+        FhirDate)                    echo "import dev.ohs.fhir.model.r4.FhirDate" ;;
+        FhirOperator)                echo "import dev.ohs.fhir.workflow.FhirOperator" ;;
+        Clock)                       echo "import kotlin.time.Clock" ;;
+        TimeZone)                    echo "import kotlinx.datetime.TimeZone" ;;
+        todayIn)                     echo "import kotlinx.datetime.todayIn" ;;
+        FhirEngine)                  echo "import dev.ohs.fhir.engine.FhirEngine" ;;
+        ResourceNotFoundException)   echo "import dev.ohs.fhir.engine.db.ResourceNotFoundException" ;;
+        ReferenceClientParam)        echo "import dev.ohs.fhir.engine.search.ReferenceClientParam" ;;
+        Search)                      echo "import dev.ohs.fhir.engine.search.Search" ;;
+        UriClientParam)              echo "import dev.ohs.fhir.engine.search.UriClientParam" ;;
+        Resource)                    echo "import dev.ohs.fhir.model.r4.Resource" ;;
+        ResourceType)                echo "import dev.ohs.fhir.model.r4.terminologies.ResourceType" ;;
+        WorkflowRepository)          echo "import dev.ohs.fhir.workflow.WorkflowRepository" ;;
         DatabaseErrorStrategy)       echo "import dev.ohs.fhir.engine.DatabaseErrorStrategy" ;;
         FhirEngineConfiguration)     echo "import dev.ohs.fhir.engine.FhirEngineConfiguration" ;;
         FhirEngineProvider)          echo "import dev.ohs.fhir.engine.FhirEngineProvider" ;;
@@ -48,10 +74,24 @@ for file in "$SRC_DIR"/*.kt; do
     fi
 done
 
+# The two things named Questionnaire, imported into the wrong file.
+if grep -qxF 'import dev.ohs.fhir.model.r4.Questionnaire' "$SRC_DIR/RegistrationScreen.kt" 2>/dev/null; then
+    hint "RegistrationScreen.kt imports the FHIR resource Questionnaire, and it needs the form from Data Capture, which has the same name. Change the line
+     import dev.ohs.fhir.model.r4.Questionnaire
+   to
+     import dev.ohs.fhir.datacapture.Questionnaire"
+fi
+if grep -qxF 'import dev.ohs.fhir.datacapture.Questionnaire' "$SRC_DIR/PatientListViewModel.kt" 2>/dev/null; then
+    hint "PatientListViewModel.kt imports the form Questionnaire from Data Capture, and it needs the FHIR resource, which has the same name. Change the line
+     import dev.ohs.fhir.datacapture.Questionnaire
+   to
+     import dev.ohs.fhir.model.r4.Questionnaire"
+fi
+
 # One hint for each missing import, naming the file the error is in.
 while read -r file name; do
     [[ -n "$name" ]] || continue
-    line="$(import_for "$name")"
+    line="$(import_for "$name" "$file")"
     if [[ -n "$line" ]]; then
         hint "'$name' has no import in $file. Add this line under the numbered import comment near the top of that file
      $line"
@@ -65,11 +105,20 @@ fi
 if has "Unresolved reference 'withCity'"; then
     hint "Step 6.2 is missing. It adds the function withCity, which step 6.3 calls."
 fi
+if has "Unresolved reference '(patient|questionnaire|extracted|patientId)'"; then
+    hint "Step 9 is missing or incomplete. It makes the value named patient, which step 11 uses."
+fi
+if has "Unresolved reference 'EngineWorkflowRepository'"; then
+    hint "Step 10.2 is missing. It adds the class EngineWorkflowRepository, which step 11 uses."
+fi
+if has "Unresolved reference '(registerPatient|questionnaireJson|onClose|viewModel|REGISTRATION_PLAN|nameQuery|_tasks|_message)'"; then
+    hint "Part of the starter code was deleted by accident. Run  step 4  with the number of the last step you finished to get clean files, then redo the step you are on."
+fi
 if has "Unresolved reference '(showPatients|scope|syncLauncher|_pollState|fhirEngine|urls|loadJob|_patients|refreshPatients|triggerOneTimeSync)'"; then
     hint "Part of the starter code was deleted by accident. Run  step  followed by the number of the last step you finished, such as  step 5,  to get clean files, then redo the step you are on."
 fi
 if has "is not abstract and does not implement abstract"; then
-    hint "A class is incomplete. A missing import in that file can cause this, so click  Fix imports  first. If the error stays, a function was deleted. In step 5.1 keep all three functions of DownloadWorkManagerImpl. In step 5.2 replace the four functions of AppFhirSyncTask with the four from the codelab."
+    hint "A class is incomplete. A missing import in that file can cause this, so click  Fix imports  first. If the error stays, a function was deleted. In step 5.1 keep all three functions of DownloadWorkManagerImpl. In step 5.2 replace the four functions of AppFhirSyncTask with the four from the codelab. In step 10.2 paste the whole class EngineWorkflowRepository."
 fi
 if has "Conflicting overloads|Redeclaration|Conflicting declarations"; then
     hint "Something is in the file twice. A step says to replace a comment or a function, not to add the new code next to the old one. Delete the older copy."
