@@ -2,7 +2,7 @@
   "name": "codelab-guide",
   "displayName": "Codelab guide",
   "description": "Lays out the code, the build log, the app output and the course manual when the editor opens.",
-  "version": "1.11.2",
+  "version": "1.11.3",
   "publisher": "ohs",
   "engines": {
     "vscode": "^1.80.0"

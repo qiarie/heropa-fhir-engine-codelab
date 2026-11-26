@@ -275,6 +275,9 @@ function activate(context) {
   insert.register(context);
 
   statusButton(context, '$(link-external) Open app preview', 'Open the app you are building in a new browser tab', 'codelab.openApp', 103);
+  // Saving a file starts a build, so this button is also the quick way to
+  // build after changes in more than one file.
+  statusButton(context, '$(save-all) Save all', 'Save every open file. Saving starts a build.', 'workbench.action.files.saveAll', 102.7);
   statusButton(context, '$(play) Build now', 'Save every file and build the app now', 'codelab.buildNow', 102.5);
   statusButton(context, '$(book) Guide', 'Show the codelab guide', 'codelab.showGuide', 102);
   const where = REDUCED ? ' in a new browser tab' : '';

@@ -106,11 +106,12 @@ The Editor tab has six areas. The Build log, the Output and the Terminal share t
 | Terminal | Bottom centre, the tab next to Output | For typing commands |
 | Guide | Right | This guide, one step at a time. **Back** and **Next** move between the steps, the list between them jumps to any step, and **Show all** puts the whole guide on one page. |
 
-You can drag the borders between the areas to resize them. The bar at the very bottom has six buttons.
+You can drag the borders between the areas to resize them. The bar at the very bottom has seven buttons.
 
 | Button | What it does |
 |---|---|
 | **Open app preview** | Opens the App preview tab |
+| **Save all** | Saves every open file in one click. It does the same as pressing Ctrl+S in each file, so a build starts when something changed. |
 | **Build now** | Saves every open file and builds the app straight away. You rarely need it, because saving a file starts a build automatically. |
 | **Guide** | Brings the Guide back if you closed it |
 | **Build log** | Brings the Build log back if you closed it |
