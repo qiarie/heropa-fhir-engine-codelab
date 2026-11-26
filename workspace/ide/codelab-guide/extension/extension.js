@@ -63,6 +63,32 @@ const pageIsOpen = (page) =>
   anyTab((input) => input instanceof vscode.TabInputWebview && input.viewType.endsWith(page.view));
 const terminalIsOpen = () => vscode.window.terminals.length > 0;
 
+// Locks the pane that holds the guide, so nothing opens on top of it. An
+// Insert button works by opening a small file, and the editor opens a file in
+// the pane that was clicked last. In the guide's pane that file would cover
+// the guide for a moment, and the editor draws a covered guide from the start
+// again. A locked pane sends the file to the pane used before it.
+const ORDINAL = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth'];
+const isGuidePreview = (input) =>
+  (input instanceof vscode.TabInputCustom && input.viewType === GUIDE_EDITOR) ||
+  (input instanceof vscode.TabInputWebview && /markdown\.preview/.test(input.viewType));
+async function lockGuide() {
+  if (REDUCED) return;
+  // A pane that also holds other tabs is left alone. The learner put them
+  // there, and a lock would get in the way.
+  const group = vscode.window.tabGroups.all.find(
+    (candidate) => candidate.tabs.length > 0 && candidate.tabs.every((tab) => isGuidePreview(tab.input)),
+  );
+  if (!group || !ORDINAL[group.viewColumn - 1]) return;
+  const before = vscode.window.tabGroups.activeTabGroup.viewColumn;
+  // The lock command works on the pane that has the keyboard.
+  await vscode.commands.executeCommand('workbench.action.focus' + ORDINAL[group.viewColumn - 1] + 'EditorGroup');
+  await vscode.commands.executeCommand('workbench.action.lockEditorGroup');
+  if (before !== group.viewColumn && ORDINAL[before - 1]) {
+    await vscode.commands.executeCommand('workbench.action.focus' + ORDINAL[before - 1] + 'EditorGroup');
+  }
+}
+
 function pageHtml(page) {
   const nonce = Math.random().toString(36).slice(2) + Date.now().toString(36);
   // The small script passes on one kind of message from the framed page, the
@@ -115,7 +141,10 @@ async function arrange(want) {
   const needBuild = !REDUCED && want.build && !pageIsOpen(BUILD) && LAB_URL !== '';
   const needOutput = !REDUCED && want.output && !pageIsOpen(OUTPUT) && LAB_URL !== '';
   const needTerminal = want.terminal && !terminalIsOpen();
-  if (!needGuide && !needBuild && !needOutput && !needTerminal) return;
+  if (!needGuide && !needBuild && !needOutput && !needTerminal) {
+    await lockGuide();
+    return;
+  }
 
   if (!vscode.window.activeTextEditor && fs.existsSync(APP_FILE)) {
     await vscode.window.showTextDocument(vscode.Uri.file(APP_FILE), { viewColumn: COLUMN.code, preview: false });
@@ -152,6 +181,7 @@ async function arrange(want) {
     await new Promise((resolve) => setTimeout(resolve, 2500));
     buildPanel.reveal(COLUMN.build, true);
   }
+  await lockGuide();
   await vscode.commands.executeCommand('workbench.action.focusFirstEditorGroup');
 }
 

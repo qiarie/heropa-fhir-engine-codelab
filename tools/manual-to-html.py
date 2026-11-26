@@ -3,7 +3,10 @@
 
 Heropa's editor keeps inline styles and drops classes and stylesheets, so
 every style is written on the element itself. The output goes to heropa-html,
-as one whole page and as one file for each section.
+as one whole page and as one file for each section. A further file,
+get-started.html, holds everything up to the end of Get the code and start a
+FHIR server, and closes by sending the learner to the Guide in the Editor for
+the remaining steps.
 
 Run it from the repository root after every change to the manual.
 
@@ -41,6 +44,19 @@ DONE = "border-left: 4px solid #2e7d32; background: #e8f5e9; padding: 8px 12px;"
 # because a learner who misses them goes wrong. Any other paragraph that opens
 # with a bold sentence gets the blue one.
 WARNINGS = ("The addresses and password in this manual are examples only.",)
+
+# The last section that goes into get-started.html. From the next section on,
+# the learner works in the Editor and reads the Guide there.
+START_ENDS_WITH = "Get the code and start a FHIR server"
+CONTINUE = f"""<h2>Continue in the Editor</h2>
+<p style="{DONE}"><strong>Your lab is ready, and the rest of this guide is in the Editor.</strong> Every step from step 3 on is there, and so is the troubleshooting list. They are not on this page.</p>
+<ol>
+<li>Go to the browser tab that shows the Editor.</li>
+<li>Look at the <strong>Guide</strong> area on the right. It shows this same guide, one step at a time.</li>
+<li>Click <strong>Next</strong> until you reach step 3, or pick step 3 from the list between <strong>Back</strong> and <strong>Next</strong>.</li>
+</ol>
+<p>If the Guide area is not there, click <strong>Guide</strong> in the bar at the very bottom of the Editor. In reduced mode the same button opens the guide as plain text.</p>
+"""
 
 
 def plain(fragment):
@@ -120,6 +136,10 @@ def main():
         name = f"{number:02d}-{slug(title)}.html"
         (OUT / "sections" / name).write_text(part.strip() + "\n", encoding="utf-8")
         print(f"  sections/{name}")
+        if title == START_ENDS_WITH:
+            start = "".join(parts[: number + 1]).strip() + "\n" + CONTINUE
+            (OUT / "get-started.html").write_text(start, encoding="utf-8")
+            print("  get-started.html")
 
     print(f"Wrote {OUT.relative_to(ROOT)}/course-manual.html and {len(parts)} sections")
 
